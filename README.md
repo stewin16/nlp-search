@@ -6,52 +6,52 @@ An intelligent NLP platform designed to instantly extract high-value insights, s
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
-### 1. 🎥 YouTube Video Lecture Intelligence
+### 1. YouTube Video Lecture Intelligence
 - **Real-Time Captions & Transcript Fetching**: Direct closed-caption retrieval via `youtube-transcript-api` with automatic punctuation and sentence boundaries.
 - **Extractive TextRank Summarization**: Identifies the most salient sentences across long tutorials and university lectures.
 - **Timestamp Navigation**: Click any extracted sentence to jump directly to that exact second in the video player.
 - **Audience Comment Sentiment Analysis**: NLTK VADER sentiment scoring with positivity, negativity, and neutral distributions visual charts.
 - **Auto-Generated Comprehension Quizzes**: Synthesizes multiple-choice questions by masking keywords and using WordNet for intelligent distractors.
 
-### 2. 👥 Zoom Meeting & Lecture Transcript Analyzer
+### 2. Zoom Meeting & Lecture Transcript Analyzer
 - **Multi-Speaker Transcript Parsing**: Upload `.vtt`, `.txt`, or paste raw transcripts directly.
 - **Action Items & Question Detection**: Scans transcripts for imperative directives, assignment deadlines, homework, and questions.
 - **Interactive Flashcards**: Automatically extracts high-recall definitions and concepts with tap-to-reveal answers and voice playback.
 
-### 3. ⚖️ Legal Document & Contract Clause Analyzer
+### 3. Legal Document & Contract Clause Analyzer
 - **Clause Risk Matrix**: Categorizes high-risk contractual clauses (Liability & Indemnity, Termination, Data Protection & Privacy, IP, Governing Law).
 - **Readability & Complexity Gauge**: Flesch-Kincaid grade level, Flesch Reading Ease score, lexical diversity, and estimated reading/speaking times.
 
-### 4. 🎙️ Web Speech AI Voice Synthesizer (TTS)
+### 4. Web Speech AI Voice Synthesizer (TTS)
 - **Audio Playback**: Listen to the extracted summary, key flashcards, or transcripts with play, pause, stop, and adjustable playback speeds (0.8x, 1.0x, 1.25x).
 
-### 5. 📥 Multi-Format Export
+### 5. Multi-Format Export
 - **One-Click Export**: Download study guides and analysis reports as Markdown (`.md`), JSON (`.json`), or Plain Text (`.txt`).
 
 ---
 
-## 🏗️ Architecture & Technology Stack
+## Architecture & Technology Stack
 
 - **Frontend**:
-  - React 17 + Vite 8 (ultra-fast compilation, HMR)
-  - Bootstrap 5 + Modern Glassmorphism CSS design system
-  - Chart.js for sentiment distribution and readability visualization
-  - Web Speech API for native browser audio narration
+ - React 17 + Vite 8 (ultra-fast compilation, HMR)
+ - Bootstrap 5 + Modern Glassmorphism CSS design system
+ - Chart.js for sentiment distribution and readability visualization
+ - Web Speech API for native browser audio narration
 
 - **Backend**:
-  - Python 3.11+ / 3.12+ FastAPI backend (`backend/server.py`)
-  - NLTK NLP Toolkit:
-    - `punkt` & `averaged_perceptron_tagger` for tokenization and POS tagging
-    - `wordnet` & `omw-1.4` for lemmas, hypernyms, hyponyms, and synonyms
-    - `vader_lexicon` for sentiment polarity classification
-  - `youtube-transcript-api` for real-time video transcript retrieval
-  - `pytest` test suite with 100% endpoint coverage
+ - Python 3.11+ / 3.12+ FastAPI backend (`backend/server.py`)
+ - NLTK NLP Toolkit:
+ - `punkt` & `averaged_perceptron_tagger` for tokenization and POS tagging
+ - `wordnet` & `omw-1.4` for lemmas, hypernyms, hyponyms, and synonyms
+ - `vader_lexicon` for sentiment polarity classification
+ - `youtube-transcript-api` for real-time video transcript retrieval
+ - `pytest` test suite with 100% endpoint coverage
 
 ---
 
-## 🚀 How to Run Locally
+## How to Run Locally
 
 ### One-Click Launch (Recommended)
 
@@ -93,7 +93,7 @@ npm start
 
 ---
 
-## 🧪 Running Automated Tests
+## Running Automated Tests
 
 Run the backend test suite:
 
@@ -105,7 +105,7 @@ All 11 endpoint and integration tests will execute against the FastAPI server.
 
 ---
 
-## 📡 Key API Endpoints
+## Key API Endpoints
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -125,5 +125,5 @@ All 11 endpoint and integration tests will execute against the FastAPI server.
 
 ---
 
-## 📄 License
+## License
 MIT License • Built with Timeless AI

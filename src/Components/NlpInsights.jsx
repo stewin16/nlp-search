@@ -115,7 +115,7 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
             output += `*Generated automatically on ${new Date().toLocaleDateString()}*\n\n`;
             
             if (read) {
-                output += `## 📊 Readability & Complexity\n`;
+                output += `## Readability & Complexity\n`;
                 output += `- **Reading Ease:** ${read.score}/100 (${read.label})\n`;
                 output += `- **Grade Level:** ${read.grade}\n`;
                 output += `- **Word Count:** ${read.stats.words} words\n`;
@@ -124,14 +124,14 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
             }
 
             if (cards.length > 0) {
-                output += `## 💡 Key Concept Flashcards\n`;
+                output += `## Key Concept Flashcards\n`;
                 cards.forEach((c, idx) => {
                     output += `### ${idx + 1}. ${c.term}\n**Definition/Insight:** ${c.definition}\n\n`;
                 });
             }
 
             if (actions.length > 0) {
-                output += `## 📌 Action Items & Deadlines\n`;
+                output += `## Action Items & Deadlines\n`;
                 actions.forEach(a => {
                     output += `- [ ] [${a.priority.toUpperCase()}] ${a.text}\n`;
                 });
@@ -139,14 +139,13 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
             }
 
             if (questions.length > 0) {
-                output += `## ❓ Discussion Questions\n`;
+                output += `## Discussion Questions\n`;
                 questions.forEach(q => {
                     output += `- ${q.text}\n`;
                 });
                 output += `\n`;
             }
         } else {
-            // Plain text
             output += `TIMELESS AI - STUDY GUIDE & INTELLIGENCE REPORT\n`;
             output += `Date: ${new Date().toLocaleDateString()}\n\n`;
             if (read) {
@@ -196,11 +195,11 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
                             onClick={() => (isPlayingAudio ? pauseSpeech() : playSpeech())}
                             title="Listen to content via Text-to-Speech"
                         >
-                            {isPlayingAudio ? "⏸ Pause Audio" : "▶ Listen (TTS)"}
+                            {isPlayingAudio ? "Pause Audio" : "Listen (TTS)"}
                         </button>
                         {isPlayingAudio && (
                             <button className="btn btn-sm btn-light rounded-pill px-2" onClick={stopSpeech}>
-                                ⏹ Stop
+                                Stop
                             </button>
                         )}
                     </div>
@@ -223,7 +222,7 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
                                 aria-expanded="false"
                                 onClick={() => exportData("markdown")}
                             >
-                                📥 Export Notes (.md)
+                                Export Notes (.md)
                             </button>
                         </div>
                     )}
@@ -263,7 +262,7 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
                                 style={activeTab === 'readability' ? { background: '#ff0056' } : {}}
                                 onClick={() => setActiveTab('readability')}
                             >
-                                📊 Readability & Metrics
+                                Readability & Metrics
                             </button>
                         </li>
                         <li className="nav-item">
@@ -272,7 +271,7 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
                                 style={activeTab === 'flashcards' ? { background: '#ff0056' } : {}}
                                 onClick={() => setActiveTab('flashcards')}
                             >
-                                💡 Flashcards ({data.flashcards?.length || 0})
+                                Flashcards ({data.flashcards?.length || 0})
                             </button>
                         </li>
                         <li className="nav-item">
@@ -281,7 +280,7 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
                                 style={activeTab === 'actions' ? { background: '#ff0056' } : {}}
                                 onClick={() => setActiveTab('actions')}
                             >
-                                📌 Actions & Questions ({data.actions_and_questions?.total_actions + data.actions_and_questions?.total_questions || 0})
+                                Actions & Questions ({data.actions_and_questions?.total_actions + data.actions_and_questions?.total_questions || 0})
                             </button>
                         </li>
                         {showLegal && (
@@ -291,7 +290,7 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
                                     style={activeTab === 'legal' ? { background: '#ff0056' } : {}}
                                     onClick={() => setActiveTab('legal')}
                                 >
-                                    ⚖️ Clause Risk Matrix ({data.legal_risk?.total_risk_clauses || 0})
+                                    Clause Risk Matrix ({data.legal_risk?.total_risk_clauses || 0})
                                 </button>
                             </li>
                         )}
@@ -369,17 +368,17 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
                                                     <span className="badge rounded-pill bg-secondary small">Concept #{c.id}</span>
                                                     <div className="d-flex gap-2 align-items-center">
                                                         <button
-                                                            className="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill"
+                                                            className="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill small"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 playSpeech(`${c.term}. ${c.definition}`);
                                                             }}
                                                             title="Speak card aloud"
                                                         >
-                                                            🔊
+                                                            Listen
                                                         </button>
                                                         <span className="small text-danger fw-bold">
-                                                            {isRev ? "Hide Answer ▲" : "Click to Reveal ▼"}
+                                                            {isRev ? "Hide Answer [-]" : "Click to Reveal [+]"}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -406,7 +405,7 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
                         <div className="row g-3">
                             <div className="col-md-6">
                                 <h6 className="fw-bold text-danger border-bottom pb-2">
-                                    📌 Actionable Items & Next Steps ({data.actions_and_questions?.action_items?.length || 0})
+                                    Actionable Items & Next Steps ({data.actions_and_questions?.action_items?.length || 0})
                                 </h6>
                                 {data.actions_and_questions?.action_items?.length === 0 ? (
                                     <p className="text-muted small">No direct imperative directives or deadlines detected.</p>
@@ -425,7 +424,7 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
                             </div>
                             <div className="col-md-6">
                                 <h6 className="fw-bold text-dark border-bottom pb-2">
-                                    ❓ Questions & Discussion Points ({data.actions_and_questions?.questions?.length || 0})
+                                    Questions & Discussion Points ({data.actions_and_questions?.questions?.length || 0})
                                 </h6>
                                 {data.actions_and_questions?.questions?.length === 0 ? (
                                     <p className="text-muted small">No questions found in this transcript.</p>
