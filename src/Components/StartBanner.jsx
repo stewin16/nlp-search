@@ -12,7 +12,7 @@ export const StartBanner = () => {
                             MULTIMODAL NLP INTELLIGENCE ENGINE
                         </span>
                         <h1 className="hero-title">
-                            OmniLex <span className="hero-accent">AI</span>
+                            Cogni<span className="hero-accent">Text</span>
                         </h1>
                         <p className="hero-tagline">
                             <i>Next-Generation Semantic Intelligence for Video, Audio & Documents</i>

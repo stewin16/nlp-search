@@ -8,13 +8,13 @@ const NeuralHologram3D = () => {
         const mount = mountRef.current;
         if (!mount) return;
 
-        let width = mount.clientWidth || 550;
-        let height = mount.clientHeight || 520;
+        let width = mount.clientWidth || 560;
+        let height = mount.clientHeight || 530;
 
         // Scene, Camera, Renderer
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-        camera.position.set(0, 0, 26);
+        const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+        camera.position.set(0, 0, 27);
 
         const renderer = new THREE.WebGLRenderer({
             alpha: true,
@@ -26,280 +26,354 @@ const NeuralHologram3D = () => {
         mount.appendChild(renderer.domElement);
 
         const mainGroup = new THREE.Group();
+        // Isometric perspective tilt
+        mainGroup.rotation.x = 0.36;
+        mainGroup.rotation.y = -0.40;
+        mainGroup.rotation.z = 0.10;
         scene.add(mainGroup);
 
-        // Helper: Create high-res 3D text sprite using HTML5 Canvas
-        const createTextSprite = (text, color = "#ffffff", isAccent = false) => {
+        // Helper: Create High-Resolution Light Luxury Frosted Glass Card Texture
+        const createGlassCardTexture = (tierNumber, title, subtitle, items, themeColor, accentColor) => {
             const canvas = document.createElement("canvas");
-            canvas.width = 512;
-            canvas.height = 128;
+            canvas.width = 720;
+            canvas.height = 370;
             const ctx = canvas.getContext("2d");
 
-            // Pill tag background
-            const bgGrad = ctx.createLinearGradient(0, 0, 512, 128);
-            if (isAccent) {
-                bgGrad.addColorStop(0, "rgba(255, 0, 86, 0.45)");
-                bgGrad.addColorStop(1, "rgba(180, 0, 60, 0.25)");
-            } else {
-                bgGrad.addColorStop(0, "rgba(20, 24, 38, 0.7)");
-                bgGrad.addColorStop(1, "rgba(10, 14, 24, 0.5)");
-            }
+            // 1. Frosted Crystal Glass Base
+            const bgGrad = ctx.createLinearGradient(0, 0, 720, 370);
+            bgGrad.addColorStop(0, "rgba(255, 255, 255, 0.96)");
+            bgGrad.addColorStop(0.6, "rgba(250, 252, 255, 0.92)");
+            bgGrad.addColorStop(1, "rgba(241, 245, 249, 0.95)");
 
-            // Rounded rectangle
-            const r = 36;
+            const r = 28;
             ctx.beginPath();
-            ctx.moveTo(r, 10);
-            ctx.lineTo(512 - r, 10);
-            ctx.quadraticCurveTo(512, 10, 512, 10 + r);
-            ctx.lineTo(512, 128 - r);
-            ctx.quadraticCurveTo(512, 128, 512 - r, 128);
-            ctx.lineTo(r, 128);
-            ctx.quadraticCurveTo(0, 128, 0, 128 - r);
-            ctx.lineTo(0, 10 + r);
-            ctx.quadraticCurveTo(0, 10, r, 10);
+            ctx.moveTo(r, 8);
+            ctx.lineTo(720 - r, 8);
+            ctx.quadraticCurveTo(720, 8, 720, 8 + r);
+            ctx.lineTo(720, 370 - r);
+            ctx.quadraticCurveTo(720, 370, 720 - r, 370);
+            ctx.lineTo(r, 370);
+            ctx.quadraticCurveTo(0, 370, 0, 370 - r);
+            ctx.lineTo(0, 8 + r);
+            ctx.quadraticCurveTo(0, 8, r, 8);
             ctx.closePath();
 
             ctx.fillStyle = bgGrad;
             ctx.fill();
 
-            // Border
-            ctx.strokeStyle = isAccent ? "rgba(255, 0, 86, 0.9)" : "rgba(0, 229, 255, 0.5)";
+            // 2. Crisp Polished Glass Border
+            const borderGrad = ctx.createLinearGradient(0, 0, 720, 370);
+            borderGrad.addColorStop(0, themeColor);
+            borderGrad.addColorStop(0.35, "rgba(255, 255, 255, 0.8)");
+            borderGrad.addColorStop(0.7, accentColor);
+            borderGrad.addColorStop(1, themeColor);
+            ctx.strokeStyle = borderGrad;
             ctx.lineWidth = 4;
             ctx.stroke();
 
-            // Node indicator dot
+            // Subtle top highlight reflection
             ctx.beginPath();
-            ctx.arc(42, 64, 10, 0, Math.PI * 2);
-            ctx.fillStyle = isAccent ? "#ff0056" : "#00e5ff";
+            ctx.moveTo(36, 12);
+            ctx.lineTo(684, 12);
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 3. Card Header Bar
+            // Tier Number Badge Pill
+            ctx.fillStyle = themeColor;
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(36, 30, 58, 34, 17);
+            } else {
+                ctx.rect(36, 30, 58, 34);
+            }
             ctx.fill();
 
-            // Text
-            ctx.font = "bold 44px 'Segoe UI', Roboto, sans-serif";
-            ctx.fillStyle = color;
+            ctx.font = "bold 18px 'Segoe UI', Roboto, sans-serif";
+            ctx.fillStyle = "#ffffff";
+            ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText(text, 68, 66);
+            ctx.fillText(tierNumber, 65, 47);
+
+            // Title
+            ctx.textAlign = "left";
+            ctx.font = "bold 26px 'Segoe UI', Roboto, sans-serif";
+            ctx.fillStyle = "#0f172a";
+            ctx.fillText(title, 110, 42);
+
+            // Subtitle
+            ctx.font = "15px 'Segoe UI', Roboto, sans-serif";
+            ctx.fillStyle = "#64748b";
+            ctx.fillText(subtitle, 110, 68);
+
+            // Subtle separator line
+            ctx.strokeStyle = "rgba(15, 23, 42, 0.08)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(36, 92);
+            ctx.lineTo(684, 92);
+            ctx.stroke();
+
+            // 4. Feature Rows inside the Card
+            items.forEach((item, idx) => {
+                const y = 118 + idx * 68;
+
+                // Item Pill Background
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                if (ctx.roundRect) {
+                    ctx.roundRect(36, y, 648, 52, 14);
+                } else {
+                    ctx.rect(36, y, 648, 52);
+                }
+                ctx.fill();
+
+                // Subtle item border & drop shadow
+                ctx.strokeStyle = item.accent ? "rgba(255, 0, 86, 0.35)" : "rgba(15, 23, 42, 0.08)";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // Left color accent bar
+                ctx.fillStyle = item.accent ? themeColor : accentColor;
+                ctx.fillRect(36, y + 10, 5, 32);
+
+                // Item Label
+                ctx.font = "bold 18px 'Segoe UI', Roboto, sans-serif";
+                ctx.fillStyle = "#1e293b";
+                ctx.fillText(item.label, 58, y + 26);
+
+                // Item Tag Badge Pill
+                ctx.font = "bold 13px 'Segoe UI', Roboto, sans-serif";
+                ctx.fillStyle = item.accent ? themeColor : "#0284c7";
+                ctx.textAlign = "right";
+                ctx.fillText(item.tag, 664, y + 26);
+                ctx.textAlign = "left";
+            });
 
             const texture = new THREE.CanvasTexture(canvas);
             texture.minFilter = THREE.LinearFilter;
-            const spriteMaterial = new THREE.SpriteMaterial({
-                map: texture,
-                transparent: true,
-                opacity: 0.92,
-                depthWrite: false
-            });
-            const sprite = new THREE.Sprite(spriteMaterial);
-            sprite.scale.set(4.6, 1.15, 1);
-            return sprite;
+            return texture;
         };
 
-        // NLP Word Embedding vocabulary & coordinates in 3D vector space
-        const nlpTokens = [
-            { text: "TRANSFORMER", pos: [0, 5.2, 0], accent: true },
-            { text: "ATTENTION", pos: [4.8, 3.4, 2.5], accent: true },
-            { text: "TEXTRANK", pos: [-4.6, 3.2, 1.8], accent: true },
-            { text: "SUMMARIZATION", pos: [-5.4, -0.5, 2.8], accent: false },
-            { text: "WORDNET", pos: [5.2, -0.8, -2.0], accent: false },
-            { text: "LEMMATIZE", pos: [3.8, -4.2, 2.2], accent: false },
-            { text: "TOKENIZE", pos: [-3.8, -4.0, -1.5], accent: false },
-            { text: "SENTIMENT", pos: [0, -5.2, 1.0], accent: true },
-            { text: "SEMANTICS", pos: [-2.8, 1.8, -4.5], accent: false },
-            { text: "EMBEDDING", pos: [3.2, 1.5, -4.2], accent: false },
-            { text: "SPEECH-TO-TEXT", pos: [5.5, -3.0, -1.8], accent: true },
-            { text: "READABILITY", pos: [-5.0, -3.2, 1.5], accent: false },
-            { text: "FLASHCARDS", pos: [-1.8, 4.2, -3.0], accent: false },
-            { text: "RISK MATRIX", pos: [2.2, -2.2, 4.8], accent: false },
-            { text: "INDIAN TTS", pos: [-2.4, -2.0, 4.5], accent: true }
+        // Configuration for the 3 Tiers
+        const tierCardsData = [
+            {
+                tierNumber: "01",
+                title: "Multimodal Ingestion",
+                subtitle: "Real-Time Audio, Video & Document Streams",
+                items: [
+                    { label: "YouTube Video Captions", tag: "TimedText Audio Stream", accent: true },
+                    { label: "Zoom Lecture Transcripts", tag: "Speaker & Timestamps", accent: false },
+                    { label: "Legal & Policy Agreements", tag: "Clause Segmenter", accent: false }
+                ],
+                themeColor: "#ff0056",
+                accentColor: "#f43f5e",
+                yPos: 5.8,
+                zPos: -3.8
+            },
+            {
+                tierNumber: "02",
+                title: "Deep NLP Intelligence",
+                subtitle: "Semantic Graph, TextRank & Lexical Parsing",
+                items: [
+                    { label: "TextRank Extractive Engine", tag: "Graph-Based Ranker", accent: true },
+                    { label: "WordNet Synset Similarity", tag: "Semantic Lemmatizer", accent: false },
+                    { label: "VADER Polarity Scoring", tag: "Sentiment Spectrum", accent: true }
+                ],
+                themeColor: "#7c3aed",
+                accentColor: "#8b5cf6",
+                yPos: 0.0,
+                zPos: 0.0
+            },
+            {
+                tierNumber: "03",
+                title: "Actionable Outputs",
+                subtitle: "Study Flashcards, Quiz & Voice Synthesis",
+                items: [
+                    { label: "Indian Female Voice TTS", tag: "en-IN Voice Synthesizer", accent: true },
+                    { label: "Smart Comprehension Quiz", tag: "Context-Aware MCQs", accent: false },
+                    { label: "Legal Risk & Clause Matrix", tag: "Automated Compliance", accent: true }
+                ],
+                themeColor: "#0284c7",
+                accentColor: "#0ea5e9",
+                yPos: -5.8,
+                zPos: 3.8
+            }
         ];
 
-        const tokenSprites = [];
-        const tokenNodesGroup = new THREE.Group();
-        mainGroup.add(tokenNodesGroup);
+        // 3D Card Meshes
+        const cardMeshes = [];
+        const cardWidth = 11.4;
+        const cardHeight = 5.9;
+        const cardGeometry = new THREE.PlaneGeometry(cardWidth, cardHeight);
 
-        nlpTokens.forEach((item) => {
-            const sprite = createTextSprite(
-                item.text,
-                item.accent ? "#ffffff" : "#e0f2fe",
-                item.accent
+        tierCardsData.forEach((data, index) => {
+            const texture = createGlassCardTexture(
+                data.tierNumber,
+                data.title,
+                data.subtitle,
+                data.items,
+                data.themeColor,
+                data.accentColor
             );
-            sprite.position.set(...item.pos);
-            sprite.userData = {
-                basePos: new THREE.Vector3(...item.pos),
-                speed: 0.6 + Math.random() * 0.8,
-                phase: Math.random() * Math.PI * 2
-            };
-            tokenSprites.push(sprite);
-            tokenNodesGroup.add(sprite);
 
-            // Small glowing node anchor dot
-            const nodeDotGeo = new THREE.SphereGeometry(0.18, 12, 12);
-            const nodeDotMat = new THREE.MeshBasicMaterial({
-                color: item.accent ? 0xff0056 : 0x00e5ff
-            });
-            const nodeDot = new THREE.Mesh(nodeDotGeo, nodeDotMat);
-            nodeDot.position.set(...item.pos);
-            tokenNodesGroup.add(nodeDot);
-        });
-
-        // 2. Self-Attention Synapse Lines (Connecting related NLP tokens)
-        const lineConnections = [
-            [0, 1], // Transformer <-> Attention
-            [0, 2], // Transformer <-> TextRank
-            [2, 3], // TextRank <-> Summarization
-            [0, 9], // Transformer <-> Embedding
-            [9, 8], // Embedding <-> Semantics
-            [4, 5], // WordNet <-> Lemmatize
-            [5, 6], // Lemmatize <-> Tokenize
-            [0, 7], // Transformer <-> Sentiment
-            [1, 10], // Attention <-> Speech-to-Text
-            [3, 11], // Summarization <-> Readability
-            [3, 12], // Summarization <-> Flashcards
-            [3, 13], // Summarization <-> Risk Matrix
-            [10, 14], // Speech-to-Text <-> Indian TTS
-            [1, 7], // Attention <-> Sentiment
-            [2, 8]  // TextRank <-> Semantics
-        ];
-
-        const lineGeometries = [];
-        const linesGroup = new THREE.Group();
-        mainGroup.add(linesGroup);
-
-        lineConnections.forEach(([fromIdx, toIdx]) => {
-            const p1 = new THREE.Vector3(...nlpTokens[fromIdx].pos);
-            const p2 = new THREE.Vector3(...nlpTokens[toIdx].pos);
-            const geom = new THREE.BufferGeometry().setFromPoints([p1, p2]);
-            lineGeometries.push({ geom, fromIdx, toIdx });
-
-            const isKey = nlpTokens[fromIdx].accent && nlpTokens[toIdx].accent;
-            const mat = new THREE.LineBasicMaterial({
-                color: isKey ? 0xff0056 : 0x00e5ff,
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
                 transparent: true,
-                opacity: isKey ? 0.65 : 0.35,
-                blending: THREE.AdditiveBlending
+                opacity: 0.98,
+                side: THREE.DoubleSide
             });
-            const line = new THREE.Line(geom, mat);
-            linesGroup.add(line);
+
+            const mesh = new THREE.Mesh(cardGeometry, material);
+            mesh.position.set(0, data.yPos, data.zPos);
+            mainGroup.add(mesh);
+
+            // Realistic Soft Ambient Occlusion Shadow Plane (Dark shadow under card against white space)
+            const shadowGeo = new THREE.PlaneGeometry(cardWidth + 0.6, cardHeight + 0.6);
+            const shadowMat = new THREE.MeshBasicMaterial({
+                color: 0x0f172a,
+                transparent: true,
+                opacity: 0.09,
+                depthWrite: false
+            });
+            const shadowPlane = new THREE.Mesh(shadowGeo, shadowMat);
+            shadowPlane.position.set(0.15, -0.2, -0.1);
+            mesh.add(shadowPlane);
+
+            cardMeshes.push({
+                mesh,
+                baseY: data.yPos,
+                baseZ: data.zPos,
+                phase: index * 1.5,
+                speed: 1.15
+            });
         });
 
-        // 3. Central Attention Weight Core (Multi-ring Neural Gyroscope)
-        const coreRingA = new THREE.Mesh(
-            new THREE.TorusGeometry(2.8, 0.04, 16, 80),
-            new THREE.MeshBasicMaterial({ color: 0xff0056, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending })
-        );
-        const coreRingB = new THREE.Mesh(
-            new THREE.TorusGeometry(3.3, 0.03, 16, 90),
-            new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending })
-        );
-        const coreRingC = new THREE.Mesh(
-            new THREE.TorusGeometry(2.1, 0.05, 16, 70),
-            new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending })
-        );
-        coreRingA.rotation.x = Math.PI / 4;
-        coreRingB.rotation.y = Math.PI / 3;
-        coreRingC.rotation.z = Math.PI / 6;
-        mainGroup.add(coreRingA);
-        mainGroup.add(coreRingB);
-        mainGroup.add(coreRingC);
+        // 3. Glowing Laser Data Threads Connecting the 3 Tiers
+        const laserLinesGroup = new THREE.Group();
+        mainGroup.add(laserLinesGroup);
 
-        // 4. Central Vector Origin Orb
-        const originGeo = new THREE.SphereGeometry(1.2, 20, 20);
-        const originMat = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.25
-        });
-        const originOrb = new THREE.Mesh(originGeo, originMat);
-        mainGroup.add(originOrb);
+        const threadCount = 7;
+        const laserParticles = [];
 
-        // 5. Floating Embedding Dust (Data Vectors in high dimensional space)
-        const dustCount = 800;
-        const dustPositions = new Float32Array(dustCount * 3);
-        const dustColors = new Float32Array(dustCount * 3);
-        for (let i = 0; i < dustCount; i++) {
+        for (let i = 0; i < threadCount; i++) {
+            const xOffset = -4.6 + (i / (threadCount - 1)) * 9.2;
+            const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(xOffset, 5.8 - 2.9, -3.8),
+                new THREE.Vector3(xOffset * 0.9, 2.9, -1.9),
+                new THREE.Vector3(xOffset * 0.95, 0.0, 0.0),
+                new THREE.Vector3(xOffset * 0.9, -2.9, 1.9),
+                new THREE.Vector3(xOffset, -5.8 + 2.9, 3.8)
+            ]);
+
+            const pts = curve.getPoints(50);
+            const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+            const isPink = i % 2 === 0;
+
+            const lineMat = new THREE.LineBasicMaterial({
+                color: isPink ? 0xff0056 : 0x0284c7,
+                transparent: true,
+                opacity: 0.55,
+                linewidth: 2
+            });
+            const line = new THREE.Line(lineGeo, lineMat);
+            laserLinesGroup.add(line);
+
+            // Glowing data packet travelling down the thread
+            const pulseGeo = new THREE.SphereGeometry(0.2, 12, 12);
+            const pulseMat = new THREE.MeshBasicMaterial({
+                color: isPink ? 0xff0056 : 0x0284c7
+            });
+            const pulseMesh = new THREE.Mesh(pulseGeo, pulseMat);
+            laserLinesGroup.add(pulseMesh);
+
+            laserParticles.push({
+                mesh: pulseMesh,
+                curve,
+                progress: (i / threadCount) + Math.random() * 0.2,
+                speed: 0.16 + Math.random() * 0.09
+            });
+        }
+
+        // 4. Subtle Micro Data Particles around the 3D scene
+        const particleCount = 300;
+        const partPositions = new Float32Array(particleCount * 3);
+        const partColors = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
             const i3 = i * 3;
-            const r = 3 + Math.random() * 8.5;
-            const th = Math.random() * Math.PI * 2;
-            const ph = Math.acos(Math.random() * 2 - 1);
-            dustPositions[i3] = r * Math.sin(ph) * Math.cos(th);
-            dustPositions[i3 + 1] = r * Math.sin(ph) * Math.sin(th);
-            dustPositions[i3 + 2] = r * Math.cos(ph);
+            partPositions[i3] = (Math.random() - 0.5) * 22;
+            partPositions[i3 + 1] = (Math.random() - 0.5) * 20;
+            partPositions[i3 + 2] = (Math.random() - 0.5) * 16;
 
             const isPink = Math.random() > 0.5;
-            dustColors[i3] = isPink ? 1.0 : 0.0;
-            dustColors[i3 + 1] = isPink ? 0.0 : 0.9;
-            dustColors[i3 + 2] = isPink ? 0.35 : 1.0;
+            partColors[i3] = isPink ? 1.0 : 0.01;
+            partColors[i3 + 1] = isPink ? 0.0 : 0.52;
+            partColors[i3 + 2] = isPink ? 0.34 : 0.78;
         }
-        const dustGeo = new THREE.BufferGeometry();
-        dustGeo.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
-        dustGeo.setAttribute("color", new THREE.BufferAttribute(dustColors, 3));
-        const dustMat = new THREE.PointsMaterial({
-            size: 0.15,
+        const particleGeo = new THREE.BufferGeometry();
+        particleGeo.setAttribute("position", new THREE.BufferAttribute(partPositions, 3));
+        particleGeo.setAttribute("color", new THREE.BufferAttribute(partColors, 3));
+        const particleMat = new THREE.PointsMaterial({
+            size: 0.16,
             vertexColors: true,
             transparent: true,
-            opacity: 0.65,
-            blending: THREE.AdditiveBlending
+            opacity: 0.65
         });
-        const dustPoints = new THREE.Points(dustGeo, dustMat);
-        mainGroup.add(dustPoints);
+        const particles = new THREE.Points(particleGeo, particleMat);
+        mainGroup.add(particles);
 
-        // 6. Interactive Mouse Tracking
-        let targetRotX = 0;
-        let targetRotY = 0;
+        // 5. Interactive Mouse Camera Pan
+        let targetRotX = 0.36;
+        let targetRotY = -0.40;
 
         const onMouseMove = (e) => {
             const rect = mount.getBoundingClientRect();
             const mouseX = ((e.clientX - rect.left) / width) * 2 - 1;
             const mouseY = -(((e.clientY - rect.top) / height) * 2 - 1);
-            targetRotY = mouseX * 0.85;
-            targetRotX = mouseY * 0.65;
+            targetRotY = -0.40 + mouseX * 0.25;
+            targetRotX = 0.36 - mouseY * 0.18;
         };
 
         window.addEventListener("mousemove", onMouseMove);
 
-        // 7. Resize Handling
+        // 6. Resize Handling
         const handleResize = () => {
             if (!mount) return;
-            width = mount.clientWidth || 550;
-            height = mount.clientHeight || 520;
+            width = mount.clientWidth || 560;
+            height = mount.clientHeight || 530;
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
             renderer.setSize(width, height);
         };
         window.addEventListener("resize", handleResize);
 
-        // 8. Animation Loop
+        // 7. Animation Loop
         let frameId;
         const clock = new THREE.Clock();
 
         const animate = () => {
             frameId = requestAnimationFrame(animate);
+            const delta = clock.getDelta();
             const time = clock.getElapsedTime();
 
-            // Organic slow orbital rotation
-            tokenNodesGroup.rotation.y = time * 0.07;
-            linesGroup.rotation.y = time * 0.07;
-
-            // Core gyros rotate in opposing axes
-            coreRingA.rotation.x += 0.008;
-            coreRingA.rotation.y += 0.005;
-            coreRingB.rotation.y += 0.007;
-            coreRingB.rotation.z += 0.006;
-            coreRingC.rotation.z -= 0.009;
-
-            originOrb.rotation.y -= 0.006;
-
-            dustPoints.rotation.y -= 0.003;
-
-            // Gentle floating breathing animation on each NLP token sprite
-            tokenSprites.forEach((sprite) => {
-                const u = sprite.userData;
-                const bobY = Math.sin(time * u.speed + u.phase) * 0.22;
-                const bobX = Math.cos(time * u.speed * 0.7 + u.phase) * 0.15;
-                sprite.position.x = u.basePos.x + bobX;
-                sprite.position.y = u.basePos.y + bobY;
+            // Organic levitation on the 3 tiers
+            cardMeshes.forEach((item) => {
+                const bob = Math.sin(time * item.speed + item.phase) * 0.22;
+                item.mesh.position.y = item.baseY + bob;
             });
 
-            // Smooth mouse responsiveness
+            // Data packets streaming down laser threads
+            laserParticles.forEach((p) => {
+                p.progress = (p.progress + p.speed * delta) % 1.0;
+                const pt = p.curve.getPointAt(p.progress);
+                p.mesh.position.copy(pt);
+            });
+
+            // Subtle particle drift
+            particles.rotation.y = time * 0.015;
+
+            // Smooth mouse damping
             mainGroup.rotation.y += (targetRotY - mainGroup.rotation.y) * 0.05;
             mainGroup.rotation.x += (targetRotX - mainGroup.rotation.x) * 0.05;
 
@@ -315,16 +389,11 @@ const NeuralHologram3D = () => {
             if (mount && renderer.domElement) {
                 mount.removeChild(renderer.domElement);
             }
-            coreRingA.geometry.dispose();
-            coreRingA.material.dispose();
-            coreRingB.geometry.dispose();
-            coreRingB.material.dispose();
-            coreRingC.geometry.dispose();
-            coreRingC.material.dispose();
-            originGeo.dispose();
-            originMat.dispose();
-            dustGeo.dispose();
-            dustMat.dispose();
+            cardGeometry.dispose();
+            cardMeshes.forEach((item) => {
+                item.mesh.material.map.dispose();
+                item.mesh.material.dispose();
+            });
             renderer.dispose();
         };
     }, []);
@@ -335,7 +404,7 @@ const NeuralHologram3D = () => {
             className="direct-3d-hologram"
             style={{
                 width: "100%",
-                height: "520px",
+                height: "530px",
                 position: "relative",
                 display: "flex",
                 alignItems: "center",

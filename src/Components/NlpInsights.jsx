@@ -150,7 +150,7 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
         } else if (format === "markdown") {
             mimeType = "text/markdown";
             extension = "md";
-            output += `# OmniLex AI - NLP Intelligence & Study Guide\n\n`;
+            output += `# CogniText - NLP Intelligence & Study Guide\n\n`;
             output += `*Generated automatically on ${new Date().toLocaleDateString()}*\n\n`;
             
             if (read) {
@@ -185,7 +185,7 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
                 output += `\n`;
             }
         } else {
-            output += `OMNILEX AI - STUDY GUIDE & INTELLIGENCE REPORT\n`;
+            output += `COGNITEXT - STUDY GUIDE & INTELLIGENCE REPORT\n`;
             output += `Date: ${new Date().toLocaleDateString()}\n\n`;
             if (read) {
                 output += `READABILITY: ${read.score}/100 (${read.label}), Grade: ${read.grade}\n\n`;
@@ -209,7 +209,7 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `omnilex-ai-report-${Date.now()}.${extension}`;
+        link.download = `cognitext-report-${Date.now()}.${extension}`;
         link.click();
         URL.revokeObjectURL(url);
     };

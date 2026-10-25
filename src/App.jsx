@@ -14,8 +14,8 @@ const App = () => {
                     <nav className="navbar navbar-expand-lg floating-navbar">
                         <div className="container-fluid px-2 px-md-3">
                             <Link className="navbar-brand d-flex align-items-center" to="/">
-                                <img src="/logo.png" height="32" className="d-inline-block align-top me-2" alt="OmniLex AI"/>
-                                <span className="brand-text">OmniLex <span className="brand-accent">AI</span></span>
+                                <img src="/logo.svg" height="34" width="34" className="d-inline-block align-top me-2 brand-logo-img" alt="CogniText"/>
+                                <span className="brand-text">Cogni<span className="brand-accent">Text</span></span>
                             </Link>
 
                             <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -64,8 +64,8 @@ const App = () => {
                 <footer className="footer">
                     <div className="container d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <div className="d-flex align-items-center">
-                            <img src="/logo.png" height="22" className="d-inline-block align-top me-2" alt="OmniLex AI"/>
-                            <span className="text-muted small">© 2026 OmniLex AI • Multimodal Video & Document NLP Intelligence</span>
+                            <img src="/logo.png" height="22" className="d-inline-block align-top me-2" alt="CogniText"/>
+                            <span className="text-muted small">© 2026 CogniText • Multimodal Video & Document NLP Intelligence</span>
                         </div>
                         <div className="footer-links">
                             <Link to="/about" className="text-muted text-decoration-none small me-3">About</Link>

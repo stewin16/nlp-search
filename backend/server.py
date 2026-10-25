@@ -41,7 +41,7 @@ lemmatizer = WordNetLemmatizer()
 sia = SentimentIntensityAnalyzer()
 stop_words = set(stopwords.words('english'))
 
-app = FastAPI(title="OmniLex AI NLP Backend", version="2.0.0")
+app = FastAPI(title="CogniText NLP Backend", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,

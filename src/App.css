@@ -209,6 +209,19 @@ button:focus {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.brand-logo-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.16);
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.navbar-brand:hover .brand-logo-img {
+  transform: scale(1.06);
+}
+
 .brand-text {
   font-weight: 700;
   font-size: 1.15rem;

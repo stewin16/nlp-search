@@ -2,7 +2,7 @@ import React from "react";
 const About = () => {
     return (<div>
         <div className="container transcript">
-            <div className="text-centre"><h1 className="color-dark">About OmniLex AI</h1></div>
+            <div className="text-centre"><h1 className="color-dark">About CogniText</h1></div>
             <div className="content ins">
                 <div className="row">
                     <div className="col-md-5"><h4>Inspiration</h4></div>
