@@ -20,8 +20,8 @@
 	margin: 50px 0 10px 0;
 }
 .button{
-	margin-top: 20px;
-	display: block;
+	margin-top: 15px;
+	display: inline-flex;
 }
 .transcript{
 	padding: 80px 0;

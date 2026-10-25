@@ -47,13 +47,17 @@ label {
   border: 2px #ff0056 solid;
 }
 .button {
-  padding: 10px 14px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px !important;
   background: white;
   text-decoration: none;
   text-transform: uppercase;
   color: #222 !important;
-  font-weight: lighter;
+  font-weight: 600;
   font-size: 11px;
+  letter-spacing: 0.5px;
   border: white 1px solid;
   transition: all 200ms ease-in;
   border-radius: 3.125rem !important;
@@ -65,8 +69,10 @@ label {
   -webkit-user-select: none;
   user-select: none;
   margin-bottom: .625rem;
-  width: 160px;
-  margin-right: 5px;
+  width: auto !important;
+  min-width: 140px;
+  margin-right: 8px;
+  box-sizing: border-box;
 }
 .button:hover {
   color: #ff0056 !important;
@@ -75,16 +81,20 @@ label {
   background: #ff0056 !important;
   color: white !important;
   border: #ff0056 1px solid !important;
+  width: auto !important;
+  padding: 10px 26px !important;
 }
 .button-v2:hover {
   background: transparent !important;
+  color: #ff0056 !important;
 }
 .button-v3 {
   background: transparent !important;
   color: #ff0056 !important;
   border: #ff0056 1px solid !important;
-  width: auto;
-  font-size: 10px;
+  width: auto !important;
+  padding: 9px 20px !important;
+  font-size: 11px;
   margin-top: 10px !important;
 }
 .button-v3:hover {

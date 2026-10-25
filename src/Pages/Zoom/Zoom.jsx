@@ -318,7 +318,7 @@ const Zoom = () => {
                                    onChange={async (e) => {
                                        await showFile(e);
                                    }}/>
-                            <div className="d-flex gap-2 mt-2">
+                            <div className="d-flex gap-2 mt-2 flex-wrap">
                                 <button type="button" className="button button-v2" onClick={zoomHandler}>
                                     Summarize & Analyze
                                 </button>
