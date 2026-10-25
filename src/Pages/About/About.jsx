@@ -2,7 +2,7 @@ import React from "react";
 const About = () => {
     return (<div>
         <div className="container transcript">
-            <div className="text-centre"><h1 className="color-dark">About Timeless AI</h1></div>
+            <div className="text-centre"><h1 className="color-dark">About OmniLex AI</h1></div>
             <div className="content ins">
                 <div className="row">
                     <div className="col-md-5"><h4>Inspiration</h4></div>
@@ -26,12 +26,12 @@ const About = () => {
                     <div className="col-md-7">The core of the idea is to remove those hassles of finding that “the”
                         moment in the video to give user quick and most relevant content.​
 
-                        Keeping this in mind with the help of Expert.ai services we want to provide users with a
+                        Keeping this in mind with the help of advanced NLP and Semantic Intelligence services we want to provide users with a
                         seamless learning experience by giving a fully-fledged solution where searching for queries
                         within the video, key points, video summaries, video sentiments and self-learning checkpoint can
                         be achieved on the go. ​
-                        The solution aims to reduce the time and hassles we faced while watching the long educational
-                        videos and provide a timeless solution so as to make your learning efficient.
+                        The solution aims to reduce the time and hassles we faced while watching long educational
+                        videos and reviewing heavy documents, providing an intelligent multimodal solution to make your learning efficient.
                         <p>
                         </p></div>
                 </div>
