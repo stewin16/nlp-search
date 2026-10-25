@@ -9,6 +9,7 @@ import {RedOutlineButton} from "../../Components/RedOutlineButton";
 import Dictaphone from "../../Components/Dictaphone";
 import {SimilarWords} from "../../Components/SimilarWords";
 import {GenerateQuiz} from "../../Components/GenerateQuiz";
+import NlpInsights from "../../Components/NlpInsights";
 import _ from "lodash";
 
 const Home = () => {
@@ -311,14 +312,19 @@ const Home = () => {
                             <input className="input" type="url" name="Youtube Url" id="youtubeUrl" value={url}
                                    placeholder="e.g. https://www.youtube.com/watch?v=k2P_pHQDlp0"
                                    onChange={(e) => setUrl(e.target.value)}/>
-                            <div className="d-flex gap-2 mt-2">
+                            <div className="d-flex gap-2 mt-2 flex-wrap">
                                 <button type="button" className="button button-v2" onClick={getTranscriptHandler}>
                                     Get Video
                                 </button>
                                 <button type="button" className="button button-v3" onClick={() => {
                                     setUrl("https://www.youtube.com/watch?v=k2P_pHQDlp0");
                                 }}>
-                                    Load Sample Video
+                                    Load Sample 1 (PyTorch)
+                                </button>
+                                <button type="button" className="btn btn-sm btn-outline-secondary rounded-pill" onClick={() => {
+                                    setUrl("https://www.youtube.com/watch?v=aircAruvnKk");
+                                }}>
+                                    Sample 2 (Neural Nets)
                                 </button>
                             </div>
                             {loader ? <Loader/> : ""}
@@ -515,6 +521,14 @@ const Home = () => {
                                 </div>
                             )}
                         </div>
+
+                        {transcript && (
+                            <div className="row mt-4">
+                                <div className="col-12">
+                                    <NlpInsights text={transcript} title="Video Lecture Deep NLP Intelligence" />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : null}
             </div>

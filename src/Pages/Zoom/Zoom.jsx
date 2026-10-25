@@ -6,6 +6,7 @@ import {RedOutlineButton} from "../../Components/RedOutlineButton";
 import Dictaphone from "../../Components/Dictaphone";
 import {SimilarWords} from "../../Components/SimilarWords";
 import {GenerateQuiz} from "../../Components/GenerateQuiz";
+import NlpInsights from "../../Components/NlpInsights";
 import _ from "lodash";
 
 const SAMPLE_ZOOM_CAPTIONS = [
@@ -533,6 +534,14 @@ const Zoom = () => {
                                 </div>
                             )}
                         </div>
+
+                        {transcript && (
+                            <div className="row mt-4">
+                                <div className="col-12">
+                                    <NlpInsights text={transcript} title="Zoom Lecture Intelligence & Study Tools" />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : null}
             </div>

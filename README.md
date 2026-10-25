@@ -1,89 +1,129 @@
-# `Timeless AI`
+# `Timeless AI` — Intelligent Video & Document NLP
 
-An NLP tool to remove those hassles of finding the most relevant content in videos and documents.
+An intelligent NLP platform designed to instantly extract high-value insights, summaries, readability metrics, study flashcards, and actionable tasks from YouTube lectures, Zoom meetings, and legal documents.
 
-## Inspiration
-
-Everyday people watch one billion hours of videos on YouTube and generate billions of views. Another interesting fact is that searches related to the term "how to" are growing 70 percent year over year. This means that when users are searching for ways to learn something, they rely heavily on video content. Online education has proven the immense power and impact it can have on millions of learners worldwide.
-
-## Problem
-
-Many times we find ourselves skipping through a YouTube timeline trying to find a punchline or a specific part of a tutorial. It can be time-consuming and mind-numbing to try and find a specific moment in a YouTube video.
-
-Although plenty of video solutions are available online, long educational lectures can become monotonous. People zone out frequently, lose track of what is going on, and end up rewinding and watching repeatedly. Furthermore, there is often a lack of immediate comprehension feedback to verify what you've learned.
-
-Similarly, reading lengthy privacy policies and terms takes hundreds of hours each year. Summarizing and extracting the crucial clauses in real time solves this bottleneck.
-
-## What It Does
-
-The core mission is to remove the hassle of hunting for specific moments in multimedia content and deliver instant, high-relevance NLP insights:
-
-1. **YouTube Video Analyzer**: Paste any YouTube link to fetch the full transcript, generate an extractive summary, extract key topics and entity tags, enable timestamp jumping, perform VADER sentiment analysis on audience comments with an interactive distribution chart, and generate an automated comprehension quiz.
-2. **Zoom Online Lecture Analyzer**: Upload or paste lecture transcripts to condense long discussions, search key phrases, evaluate lecture sentiment tone, and generate self-assessment quizzes.
-3. **Legal Document Analyzer**: Upload policy agreements or terms of service (.txt / .md) to generate concise executive summaries with red highlights on high-importance obligations and conditions.
-
-## NLP Pipeline & Key Endpoints
-
-- `/api/ytb-t01`: Fetches YouTube captions, cleans timestamps, and generates extractive summaries.
-- `/api/ytb-summary-01`: TextRank sentence scoring based on word frequencies and sentence positions.
-- `/api/nlp/relevants`: Main sentence scoring, topic extraction, and key lemma identification.
-- `/api/nlp/entities`: Named entity and technical keyword extraction.
-- `/api/nlp/sentiment`: NLTK VADER sentiment scoring with positivity, negativity, and neutral distributions.
-- `/api/nlp/disambiguation` & `/api/nlp/quiz`: WordNet synset and antonym matching for smart multiple-choice quiz questions.
-- `/api/ytb-similarwords-01`: WordNet synonym generation for semantic phrase expansion.
-
-## Modern Architecture & NLP Engine (Updated 2026)
-
-The project has been modernized into a self-contained, high-performance system:
-
-- **Frontend**: React + Vite 8 (fast bundling, HMR, native JSX support).
-- **Backend**: Python 3.11+ FastAPI backend (`backend/server.py`) serving local NLTK NLP pipelines:
-  - **Extractive Summarization**: Weighted sentence scoring based on word frequencies, sentence position, and length thresholds.
-  - **Sentiment Analysis**: NLTK VADER (`SentimentIntensityAnalyzer`) with compound scoring and sentiment distribution.
-  - **Semantic Analysis & Quiz Generation**: WordNet synsets, hypernyms, and antonyms for intelligent distractor generation.
-  - **YouTube Transcript Processing**: Real-time closed caption retrieval and normalization via `youtube-transcript-api`.
+![Timeless AI Architecture](public/logo.png)
 
 ---
 
-## How to Run Locally
+## 🌟 Key Features
 
-### Quick Launch (One-Click)
+### 1. 🎥 YouTube Video Lecture Intelligence
+- **Real-Time Captions & Transcript Fetching**: Direct closed-caption retrieval via `youtube-transcript-api` with automatic punctuation and sentence boundaries.
+- **Extractive TextRank Summarization**: Identifies the most salient sentences across long tutorials and university lectures.
+- **Timestamp Navigation**: Click any extracted sentence to jump directly to that exact second in the video player.
+- **Audience Comment Sentiment Analysis**: NLTK VADER sentiment scoring with positivity, negativity, and neutral distributions visual charts.
+- **Auto-Generated Comprehension Quizzes**: Synthesizes multiple-choice questions by masking keywords and using WordNet for intelligent distractors.
 
-Double-click `run_all.bat` or run in PowerShell:
+### 2. 👥 Zoom Meeting & Lecture Transcript Analyzer
+- **Multi-Speaker Transcript Parsing**: Upload `.vtt`, `.txt`, or paste raw transcripts directly.
+- **Action Items & Question Detection**: Scans transcripts for imperative directives, assignment deadlines, homework, and questions.
+- **Interactive Flashcards**: Automatically extracts high-recall definitions and concepts with tap-to-reveal answers and voice playback.
+
+### 3. ⚖️ Legal Document & Contract Clause Analyzer
+- **Clause Risk Matrix**: Categorizes high-risk contractual clauses (Liability & Indemnity, Termination, Data Protection & Privacy, IP, Governing Law).
+- **Readability & Complexity Gauge**: Flesch-Kincaid grade level, Flesch Reading Ease score, lexical diversity, and estimated reading/speaking times.
+
+### 4. 🎙️ Web Speech AI Voice Synthesizer (TTS)
+- **Audio Playback**: Listen to the extracted summary, key flashcards, or transcripts with play, pause, stop, and adjustable playback speeds (0.8x, 1.0x, 1.25x).
+
+### 5. 📥 Multi-Format Export
+- **One-Click Export**: Download study guides and analysis reports as Markdown (`.md`), JSON (`.json`), or Plain Text (`.txt`).
+
+---
+
+## 🏗️ Architecture & Technology Stack
+
+- **Frontend**:
+  - React 17 + Vite 8 (ultra-fast compilation, HMR)
+  - Bootstrap 5 + Modern Glassmorphism CSS design system
+  - Chart.js for sentiment distribution and readability visualization
+  - Web Speech API for native browser audio narration
+
+- **Backend**:
+  - Python 3.11+ / 3.12+ FastAPI backend (`backend/server.py`)
+  - NLTK NLP Toolkit:
+    - `punkt` & `averaged_perceptron_tagger` for tokenization and POS tagging
+    - `wordnet` & `omw-1.4` for lemmas, hypernyms, hyponyms, and synonyms
+    - `vader_lexicon` for sentiment polarity classification
+  - `youtube-transcript-api` for real-time video transcript retrieval
+  - `pytest` test suite with 100% endpoint coverage
+
+---
+
+## 🚀 How to Run Locally
+
+### One-Click Launch (Recommended)
+
+Double-click `run_all.bat` or execute in PowerShell:
 
 ```powershell
 .\run_all.ps1
 ```
 
-This automatically starts both the FastAPI NLP backend on `http://127.0.0.1:8000` and the Vite React frontend on `http://127.0.0.1:3000`.
+This starts:
+- **FastAPI NLP Backend**: `http://127.0.0.1:8000` (API Docs: `http://127.0.0.1:8000/docs`)
+- **Vite React Web App**: `http://localhost:3000`
+
+---
 
 ### Manual Launch
 
-#### 1. Start the NLP Backend
-
-In terminal 1:
-
+#### 1. Backend Server Setup
 ```bash
-# Install Python dependencies
-pip install fastapi uvicorn nltk youtube-transcript-api pydantic
+# Activate virtualenv (or create one: python -m venv .venv)
+.\.venv\Scripts\activate
 
-# Launch the FastAPI NLP server
-python -m uvicorn backend.server:app --host 127.0.0.1 --port 8000
+# Install dependencies
+pip install fastapi uvicorn nltk youtube-transcript-api pydantic httpx pytest
+
+# Start FastAPI server
+python -m uvicorn backend.server:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-API Documentation and Swagger UI is accessible at `http://127.0.0.1:8000/docs`.
-
-#### 2. Start the Frontend Application
-
-In terminal 2:
-
+#### 2. Frontend Web App Setup
 ```bash
-# Install frontend packages (Vite & React)
+# In the project root:
 npm install
 
-# Start Vite development server
+# Start Vite dev server on port 3000
 npm start
 # or: npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser. All API requests (`/api/*`) are automatically proxied to the Python NLP backend.
+---
+
+## 🧪 Running Automated Tests
+
+Run the backend test suite:
+
+```bash
+.\.venv\Scripts\pytest
+```
+
+All 11 endpoint and integration tests will execute against the FastAPI server.
+
+---
+
+## 📡 Key API Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/health` | `GET` | Health status and service information |
+| `/api/ytb-t01` | `GET` | YouTube caption retrieval and extractive summary |
+| `/api/ytb-summary-01` | `POST` | Extractive sentence summarization |
+| `/api/ytb-similarwords-01` | `POST` | WordNet synonyms, antonyms, and related concepts |
+| `/api/nlp/relevants` | `POST` | Main topics, key lemmas, and salience scores |
+| `/api/nlp/entities` | `POST` | Named entities and technical keyword extraction |
+| `/api/nlp/sentiment` | `POST` | NLTK VADER compound sentiment analysis |
+| `/api/nlp/quiz` | `POST` | Dynamic multiple-choice quiz generator |
+| `/api/nlp/readability` | `POST` | Flesch-Kincaid grade level and readability metrics |
+| `/api/nlp/action-items` | `POST` | Extraction of questions, tasks, and deadlines |
+| `/api/nlp/flashcards` | `POST` | High-recall study flashcard synthesis |
+| `/api/nlp/legal-analysis` | `POST` | Contractual clause risk categorization |
+| `/api/nlp/comprehensive-analysis` | `POST` | Unified deep NLP intelligence pipeline |
+
+---
+
+## 📄 License
+MIT License • Built with Timeless AI

@@ -3,6 +3,7 @@ import axios from "axios";
 import Loader from "../../Components/Loader";
 import './legal.css';
 import {RedOutlineButton} from "../../Components/RedOutlineButton";
+import NlpInsights from "../../Components/NlpInsights";
 
 const DEFAULT_LEGAL_TEXT = "This Privacy Policy describes how Timeless AI collects, uses, and discloses information when you use our services. We collect personal data that you provide directly to us when registering an account, including your email address and profile credentials. When you interact with our platform, we automatically collect log data such as your IP address, browser type, operating system, and access timestamps. We process this information to operate, maintain, and enhance the functionality of our natural language processing features. We do not sell your personal data to third parties. We may disclose personal information if required by law, subpoena, or legal proceeding, or if we determine in good faith that disclosure is necessary to protect our rights, prevent fraud, or ensure user safety. You retain the right to access, rectify, or request deletion of your personal data at any time by contacting privacy@timeless.ai. We employ industry-standard encryption protocols and security controls to safeguard data against unauthorized access, destruction, or alteration.";
 
@@ -238,6 +239,14 @@ const Legal = () => {
                                 </div>
                             )}
                         </div>
+
+                        {transcript && (
+                            <div className="row mt-4">
+                                <div className="col-12">
+                                    <NlpInsights text={transcript} title="Legal Risk & Contract Clause Intelligence" showLegal={true} />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : null}
             </div>

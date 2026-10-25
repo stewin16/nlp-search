@@ -172,17 +172,98 @@ button:focus {
   font-weight: bold;
   margin-top: 30px;
 }
-.navbar {
-  background: transparent !important;
+/* Floating Translucent Navbar */
+.floating-navbar-wrapper {
+  position: fixed;
+  top: 16px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 1050;
+  padding: 0 20px;
+  pointer-events: none;
 }
-.nav-link, .nav-item {
-  color: #111111 !important;
-  font-weight: bold;
-  font-size: 14px !important;
+
+.floating-navbar {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 1140px;
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 9999px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 2px 8px -1px rgba(255, 0, 86, 0.06);
+  padding: 6px 16px !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.nav-link:hover, .nav-item:hover {
+
+.brand-text {
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+  color: #1a1a1a;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.brand-accent {
+  background: linear-gradient(135deg, #ff0056 0%, #ff5e62 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+.custom-nav-link {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  color: #2b2b2b !important;
+  padding: 7px 18px !important;
+  border-radius: 9999px;
+  transition: all 0.25s ease;
+  position: relative;
+  text-decoration: none;
+  margin: 0 3px;
+}
+
+.custom-nav-link:hover {
   color: #ff0056 !important;
+  background: rgba(255, 0, 86, 0.07);
+  transform: translateY(-1px);
 }
+
+.custom-nav-link.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #ff0056 0%, #e0004c 100%) !important;
+  box-shadow: 0 4px 12px rgba(255, 0, 86, 0.3);
+}
+
+.main-content-flow {
+  padding-top: 85px;
+  min-height: calc(100vh - 85px);
+}
+
+@media (max-width: 991.98px) {
+  .floating-navbar {
+    border-radius: 20px;
+    padding: 10px 16px !important;
+  }
+  .navbar-collapse {
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-top: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  }
+  .custom-nav-link {
+    display: block;
+    margin: 4px 0;
+    text-align: center;
+  }
+}
+
 .content {
   border-radius: 22px;
   padding: 40px 50px;

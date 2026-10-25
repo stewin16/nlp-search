@@ -340,7 +340,8 @@ def build_quiz_from_text(text: str, key_notes: List[Dict[str, Any]] = None) -> L
 # ==========================================
 
 class TextSummaryRequest(BaseModel):
-    text: str
+    text: Optional[str] = None
+    document: Optional[Dict[str, Any]] = None
     word_count: Optional[int] = 300
     ratio: Optional[float] = 0.5
 
@@ -434,7 +435,11 @@ def get_youtube_transcript_and_summary(video_id: str = Query(...)):
 @app.post("/api/ytb-summary-01")
 def summarize_text_endpoint(req: TextSummaryRequest):
     """Summarizes text for Zoom and Legal document analyzers."""
-    res = extractive_summarize(req.text, word_count=req.word_count or 300, ratio=req.ratio or 0.5)
+    text = req.text
+    if not text and req.document:
+        text = req.document.get("text", "")
+    text = text or ""
+    res = extractive_summarize(text, word_count=req.word_count or 300, ratio=req.ratio or 0.5)
     return {"summary": res["summary"]}
 
 
@@ -581,7 +586,274 @@ def get_youtube_comments(video_id: str = Query(...)):
         "sentiment": sent_res
     }
 
+# ==========================================
+# Advanced NLP Helper Functions & Endpoints
+# ==========================================
 
-if __name__ == "__main__":
+def count_syllables(word: str) -> int:
+    """Estimates the syllable count of an English word."""
+    word = word.lower().strip()
+    if len(word) <= 3:
+        return 1
+    word = re.sub(r'(?:[^laeiouy]|ed|es|e)$', '', word)
+    word = re.sub(r'^y', '', word)
+    matches = re.findall(r'[aeiouy]{1,2}', word)
+    return max(1, len(matches))
+
+
+def calculate_readability_metrics(text: str) -> Dict[str, Any]:
+    """Computes Flesch Reading Ease, Grade Level, lexical diversity, and reading duration."""
+    cleaned = clean_text(text)
+    if not cleaned:
+        return {
+            "score": 0, "grade": "N/A", "label": "No Text",
+            "stats": {"words": 0, "sentences": 0, "reading_time_min": 0, "lexical_diversity": 0}
+        }
+
+    sentences = sent_tokenize(cleaned)
+    words = [w for w in word_tokenize(cleaned) if w.isalnum()]
+
+    total_sentences = max(1, len(sentences))
+    total_words = max(1, len(words))
+    total_syllables = sum(count_syllables(w) for w in words)
+
+    asl = total_words / total_sentences
+    asw = total_syllables / total_words
+
+    # Flesch Reading Ease Formula
+    fre = 206.835 - (1.015 * asl) - (84.6 * asw)
+    fre = round(max(0.0, min(100.0, fre)), 1)
+
+    # Flesch-Kincaid Grade Level Formula
+    fkgl = (0.39 * asl) + (11.8 * asw) - 15.59
+    fkgl = round(max(1.0, fkgl), 1)
+
+    if fre >= 75:
+        label = "Easy to Read (Middle School)"
+        badge = "success"
+    elif fre >= 55:
+        label = "Standard (High School)"
+        badge = "info"
+    elif fre >= 35:
+        label = "Moderate (College Level)"
+        badge = "warning"
+    else:
+        label = "Complex (Academic / Specialized)"
+        badge = "danger"
+
+    unique_words = len(set(w.lower() for w in words))
+    diversity = round((unique_words / total_words) * 100, 1)
+    reading_time = round(total_words / 200, 1)
+    speaking_time = round(total_words / 130, 1)
+
+    return {
+        "score": fre,
+        "grade": f"Grade {int(round(fkgl))}",
+        "grade_num": fkgl,
+        "label": label,
+        "badge": badge,
+        "stats": {
+            "words": total_words,
+            "sentences": total_sentences,
+            "syllables": total_syllables,
+            "avg_sentence_len": round(asl, 1),
+            "lexical_diversity": diversity,
+            "reading_time_min": reading_time,
+            "speaking_time_min": speaking_time
+        }
+    }
+
+
+def extract_action_items_and_questions(text: str) -> Dict[str, Any]:
+    """Extracts questions and actionable tasks/deadlines from lecture and meeting transcripts."""
+    sentences = sent_tokenize(text)
+    questions = []
+    action_items = []
+
+    action_triggers = [
+        "must", "should", "need to", "make sure", "don't forget", "remember to",
+        "assignment", "homework", "submit", "deadline", "by next", "due date",
+        "will provide", "we have to", "review", "read chapter", "prepare"
+    ]
+
+    for idx, s in enumerate(sentences):
+        s_clean = s.strip()
+        if not s_clean:
+            continue
+
+        if s_clean.endswith("?") or re.match(r"^(who|what|where|when|why|how|can|could|would|should|is|are|does|did)\b", s_clean, re.IGNORECASE):
+            questions.append({
+                "id": len(questions) + 1,
+                "text": s_clean,
+                "index": idx
+            })
+
+        s_lower = s_clean.lower()
+        matched_trigger = next((trig for trig in action_triggers if trig in s_lower), None)
+        if matched_trigger and len(s_clean) > 20:
+            priority = "High" if any(k in s_lower for k in ["deadline", "due", "must", "submit"]) else "Normal"
+            action_items.append({
+                "id": len(action_items) + 1,
+                "text": s_clean,
+                "trigger": matched_trigger,
+                "priority": priority,
+                "index": idx
+            })
+
+    return {
+        "questions": questions[:10],
+        "action_items": action_items[:10],
+        "total_questions": len(questions),
+        "total_actions": len(action_items)
+    }
+
+
+def generate_study_flashcards(text: str) -> List[Dict[str, Any]]:
+    """Synthesizes high-recall study flashcards from transcript text and main concepts."""
+    sentences = sent_tokenize(text)
+    meta = extract_keywords_and_lemmas(text)
+    lemmas = [k["value"] for k in meta["mainLemmas"][:15]]
+
+    flashcards = []
+    seen_terms = set()
+
+    for s in sentences:
+        s_clean = s.strip()
+        if len(s_clean) < 40:
+            continue
+
+        match = re.search(r"\b([A-Z][a-zA-Z0-9\s-]{2,25})\b\s+(?:is|are|refers to|means|represents)\s+([^.]+)", s_clean, re.IGNORECASE)
+        if match:
+            term = match.group(1).strip()
+            definition = match.group(2).strip()
+            if term.lower() not in seen_terms and len(term.split()) <= 4 and len(definition) > 15:
+                seen_terms.add(term.lower())
+                flashcards.append({
+                    "id": len(flashcards) + 1,
+                    "term": term,
+                    "definition": definition,
+                    "source": s_clean
+                })
+
+        for lemma in lemmas:
+            if lemma not in seen_terms and len(flashcards) < 8:
+                pat = re.compile(rf"\b{re.escape(lemma)}\b", re.IGNORECASE)
+                if pat.search(s_clean) and len(s_clean) > 50:
+                    seen_terms.add(lemma)
+                    flashcards.append({
+                        "id": len(flashcards) + 1,
+                        "term": lemma.capitalize(),
+                        "definition": s_clean,
+                        "source": s_clean
+                    })
+                    break
+        if len(flashcards) >= 8:
+            break
+
+    return flashcards
+
+
+def analyze_legal_risk_clauses(text: str) -> Dict[str, Any]:
+    """Analyzes legal and policy texts for critical clauses and risk factors."""
+    sentences = sent_tokenize(text)
+    categories = {
+        "Liability & Indemnity": {
+            "keywords": ["liability", "indemnify", "indemnification", "hold harmless", "damages", "limitation of liability", "consequential damages"],
+            "severity": "High",
+            "badge": "danger",
+            "matches": []
+        },
+        "Termination & Cancellation": {
+            "keywords": ["terminate", "termination", "cancel", "cancellation", "breach", "suspension", "without cause"],
+            "severity": "High",
+            "badge": "danger",
+            "matches": []
+        },
+        "Data Protection & Privacy": {
+            "keywords": ["privacy", "personal data", "gdpr", "disclose", "third parties", "encryption", "cookie", "security control"],
+            "severity": "Medium",
+            "badge": "warning",
+            "matches": []
+        },
+        "Intellectual Property": {
+            "keywords": ["intellectual property", "trademark", "patent", "copyright", "proprietary", "license", "ownership"],
+            "severity": "Medium",
+            "badge": "info",
+            "matches": []
+        },
+        "Governing Law & Dispute": {
+            "keywords": ["governing law", "jurisdiction", "arbitration", "court", "subpoena", "legal proceeding", "dispute"],
+            "severity": "Low",
+            "badge": "secondary",
+            "matches": []
+        }
+    }
+
+    for s in sentences:
+        s_lower = s.lower()
+        for cat_name, cat_data in categories.items():
+            matched_kw = [kw for kw in cat_data["keywords"] if kw in s_lower]
+            if matched_kw and len(cat_data["matches"]) < 4:
+                cat_data["matches"].append({
+                    "sentence": s.strip(),
+                    "keywords": matched_kw
+                })
+
+    result_categories = []
+    for name, data in categories.items():
+        if data["matches"]:
+            result_categories.append({
+                "category": name,
+                "severity": data["severity"],
+                "badge": data["badge"],
+                "count": len(data["matches"]),
+                "clauses": data["matches"]
+            })
+
+    return {
+        "categories": result_categories,
+        "total_risk_clauses": sum(c["count"] for c in result_categories)
+    }
+
+
+@app.post("/api/nlp/readability")
+def readability_endpoint(payload: DocumentPayload):
+    """Calculates text readability metrics, grade levels, and reading times."""
+    text = payload.document.get("text", "")
+    return calculate_readability_metrics(text)
+
+
+@app.post("/api/nlp/action-items")
+def action_items_endpoint(payload: DocumentPayload):
+    """Extracts questions and action items from transcripts."""
+    text = payload.document.get("text", "")
+    return extract_action_items_and_questions(text)
+
+
+@app.post("/api/nlp/flashcards")
+def flashcards_endpoint(payload: DocumentPayload):
+    """Generates study flashcards for lecture and educational transcripts."""
+    text = payload.document.get("text", "")
+    return {"flashcards": generate_study_flashcards(text)}
+
+
+@app.post("/api/nlp/legal-analysis")
+def legal_analysis_endpoint(payload: DocumentPayload):
+    """Performs legal risk clause categorization and severity mapping."""
+    text = payload.document.get("text", "")
+    return analyze_legal_risk_clauses(text)
+
+
+@app.post("/api/nlp/comprehensive-analysis")
+def comprehensive_analysis_endpoint(payload: DocumentPayload):
+    """Unified advanced NLP analysis endpoint."""
+    text = payload.document.get("text", "")
+    return {
+        "readability": calculate_readability_metrics(text),
+        "actions_and_questions": extract_action_items_and_questions(text),
+        "flashcards": generate_study_flashcards(text),
+        "legal_risk": analyze_legal_risk_clauses(text)
+    }
+
     import uvicorn
     uvicorn.run("backend.server:app", host="127.0.0.1", port=8000, reload=True)
