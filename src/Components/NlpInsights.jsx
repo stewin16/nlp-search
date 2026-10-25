@@ -13,9 +13,41 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
     const [speechRate, setSpeechRate] = useState(1.0);
     const synthRef = useRef(null);
 
+    const [selectedVoice, setSelectedVoice] = useState(null);
+
+    const pickIndianFemaleVoice = () => {
+        if (!synthRef.current) return null;
+        const voices = synthRef.current.getVoices() || [];
+        
+        // 1. Look for Indian English female voice (Heera, Neerja, Priya, Veena, Raveena, Ananya, etc.)
+        const indianFemale = voices.find(v => 
+            (v.lang === 'en-IN' || v.lang === 'en_IN') && 
+            /female|woman|heera|neerja|priya|veena|raveena|ananya|aditi/i.test(v.name)
+        );
+        if (indianFemale) return indianFemale;
+
+        // 2. Look for any English (India) voice
+        const anyIndian = voices.find(v => v.lang === 'en-IN' || v.lang === 'en_IN');
+        if (anyIndian) return anyIndian;
+
+        // 3. Look for any clear female English voice as graceful fallback
+        const englishFemale = voices.find(v => 
+            v.lang.startsWith('en') && /female|woman|zira|samantha|karen|victoria/i.test(v.name)
+        );
+        return englishFemale || voices[0] || null;
+    };
+
     useEffect(() => {
         if (typeof window !== "undefined" && "speechSynthesis" in window) {
             synthRef.current = window.speechSynthesis;
+            const updateVoice = () => {
+                const voice = pickIndianFemaleVoice();
+                if (voice) setSelectedVoice(voice);
+            };
+            updateVoice();
+            if (synthRef.current.onvoiceschanged !== undefined) {
+                synthRef.current.onvoiceschanged = updateVoice;
+            }
         }
         return () => {
             if (synthRef.current) {
@@ -33,7 +65,14 @@ export const NlpInsights = ({ text, title = "Advanced NLP Intelligence", showLeg
         const readContent = contentToRead || text;
         if (!readContent) return;
 
-        const utterance = new SpeechSynthesisUtterance(readContent.slice(0, 1200));
+        const utterance = new SpeechSynthesisUtterance(readContent.slice(0, 1500));
+        
+        const voice = selectedVoice || pickIndianFemaleVoice();
+        if (voice) {
+            utterance.voice = voice;
+        }
+        utterance.lang = "en-IN";
+        utterance.pitch = 1.05;
         utterance.rate = speechRate;
         utterance.onstart = () => setIsPlayingAudio(true);
         utterance.onend = () => setIsPlayingAudio(false);
