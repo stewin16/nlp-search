@@ -59,11 +59,32 @@ COMMON_STOPWORDS = {
     "you'd", "you'll", "you're", "you've", "your", "yours", "yourself", "yourselves"
 }
 
-for pkg in ['punkt', 'wordnet', 'stopwords', 'vader_lexicon', 'averaged_perceptron_tagger', 'omw-1.4']:
+import threading
+
+def _load_nltk_background():
+    global lemmatizer, sia, stop_words
+    for pkg in ['punkt', 'stopwords', 'vader_lexicon', 'wordnet', 'omw-1.4', 'averaged_perceptron_tagger']:
+        try:
+            nltk.download(pkg, download_dir=nltk_data_dir, quiet=True)
+        except Exception:
+            pass
     try:
-        nltk.download(pkg, download_dir=nltk_data_dir, quiet=True)
-    except Exception as e:
-        logger.warning(f"NLTK download error for {pkg}: {e}")
+        if lemmatizer is None:
+            lemmatizer = WordNetLemmatizer()
+    except Exception:
+        pass
+    try:
+        if sia is None:
+            sia = SentimentIntensityAnalyzer()
+    except Exception:
+        pass
+    try:
+        stop_words = set(stopwords.words('english'))
+    except Exception:
+        pass
+
+# Start background download so it never blocks import or cold start
+threading.Thread(target=_load_nltk_background, daemon=True).start()
 
 try:
     lemmatizer = WordNetLemmatizer()
@@ -75,10 +96,21 @@ try:
 except Exception:
     sia = None
 
-try:
-    stop_words = set(stopwords.words('english'))
-except Exception:
-    stop_words = COMMON_STOPWORDS
+stop_words = COMMON_STOPWORDS
+
+# Safe fallback NLP functions so app works even if NLTK corpus is not yet downloaded
+def safe_sent_tokenize(text: str) -> List[str]:
+    try:
+        return sent_tokenize(text)
+    except Exception:
+        s = re.split(r'(?<=[.!?])\s+', text)
+        return [seg.strip() for seg in s if seg.strip()]
+
+def safe_word_tokenize(text: str) -> List[str]:
+    try:
+        return word_tokenize(text)
+    except Exception:
+        return re.findall(r'\b[\w\'-]+\b', text)
 
 app = FastAPI(title="CogniText NLP Backend", version="2.0.0")
 
@@ -251,7 +283,7 @@ def extractive_summarize(text: str, word_count: int = 250, ratio: float = 0.35) 
             "compression_ratio": "0%"
         }
 
-    sentences = sent_tokenize(cleaned)
+    sentences = safe_sent_tokenize(cleaned)
     # If text is unpunctuated spoken text, intelligently segment
     if len(sentences) <= 2 and len(cleaned) > 120:
         sentences = segment_unpunctuated_text(cleaned)
@@ -270,7 +302,7 @@ def extractive_summarize(text: str, word_count: int = 250, ratio: float = 0.35) 
         }
 
     # Word frequencies
-    words = word_tokenize(cleaned.lower())
+    words = safe_word_tokenize(cleaned.lower())
     freq_table: Dict[str, float] = {}
     for w in words:
         if w.isalnum() and w not in stop_words and len(w) > 2:
@@ -291,7 +323,7 @@ def extractive_summarize(text: str, word_count: int = 250, ratio: float = 0.35) 
         end_pos = start_pos + len(sentence)
         current_search_pos = end_pos
 
-        s_words = word_tokenize(sentence.lower())
+        s_words = safe_word_tokenize(sentence.lower())
         score = 0.0
         word_len = len(s_words)
         if word_len > 0:
@@ -356,7 +388,7 @@ def extractive_summarize(text: str, word_count: int = 250, ratio: float = 0.35) 
 
 def extract_keywords_and_lemmas(text: str) -> Dict[str, Any]:
     """Extracts top keywords, lemmas, entities, and topics."""
-    words = word_tokenize(text.lower())
+    words = safe_word_tokenize(text.lower())
     try:
         tagged = nltk.pos_tag(words)
     except Exception:
@@ -421,7 +453,7 @@ def extract_keywords_and_lemmas(text: str) -> Dict[str, Any]:
 
 def analyze_vader_sentiment(text: str) -> Dict[str, Any]:
     """Runs VADER sentiment analysis, returning overall (-100 to 100) and item scores."""
-    sentences = sent_tokenize(text)
+    sentences = safe_sent_tokenize(text)
     if not sentences:
         return {"overall": 0, "items": []}
 
@@ -492,7 +524,7 @@ def build_quiz_from_text(text: str, key_notes: List[Dict[str, Any]] = None) -> L
     Extracts key concepts, crafts cloze & conceptual prompts, generates plausible distractors,
     and includes contextual explanations.
     """
-    sentences = sent_tokenize(text)
+    sentences = safe_sent_tokenize(text)
     if len(sentences) <= 2 and len(text) > 120:
         sentences = segment_unpunctuated_text(text)
 
@@ -814,7 +846,7 @@ def nlp_sentiment(payload: DocumentPayload):
 def nlp_disambiguation(payload: DocumentPayload):
     """Emulates Expert.ai /disambiguation API for quiz parsing."""
     text = payload.document.get("text", "")
-    sentences = sent_tokenize(text)
+    sentences = safe_sent_tokenize(text)
 
     sentences_data = []
     phrases_data = []
@@ -831,7 +863,7 @@ def nlp_disambiguation(payload: DocumentPayload):
         s_end = s_start + len(s)
         cur_pos = s_end
 
-        words = word_tokenize(s)
+        words = safe_word_tokenize(s)
         s_phrases = []
 
         for w in words:
@@ -925,8 +957,8 @@ def calculate_readability_metrics(text: str) -> Dict[str, Any]:
             "stats": {"words": 0, "sentences": 0, "reading_time_min": 0, "lexical_diversity": 0}
         }
 
-    sentences = sent_tokenize(cleaned)
-    words = [w for w in word_tokenize(cleaned) if w.isalnum()]
+    sentences = safe_sent_tokenize(cleaned)
+    words = [w for w in safe_word_tokenize(cleaned) if w.isalnum()]
 
     total_sentences = max(1, len(sentences))
     total_words = max(1, len(words))
@@ -981,7 +1013,7 @@ def calculate_readability_metrics(text: str) -> Dict[str, Any]:
 
 def extract_action_items_and_questions(text: str) -> Dict[str, Any]:
     """Extracts questions and actionable tasks/deadlines from lecture and meeting transcripts."""
-    sentences = sent_tokenize(text)
+    sentences = safe_sent_tokenize(text)
     questions = []
     action_items = []
 
@@ -1025,7 +1057,7 @@ def extract_action_items_and_questions(text: str) -> Dict[str, Any]:
 
 def generate_study_flashcards(text: str) -> List[Dict[str, Any]]:
     """Synthesizes high-recall study flashcards from transcript text and main concepts."""
-    sentences = sent_tokenize(text)
+    sentences = safe_sent_tokenize(text)
     meta = extract_keywords_and_lemmas(text)
     lemmas = [k["value"] for k in meta["mainLemmas"][:15]]
 
@@ -1070,7 +1102,7 @@ def generate_study_flashcards(text: str) -> List[Dict[str, Any]]:
 
 def analyze_legal_risk_clauses(text: str) -> Dict[str, Any]:
     """Analyzes legal and policy texts for critical clauses and risk factors."""
-    sentences = sent_tokenize(text)
+    sentences = safe_sent_tokenize(text)
     categories = {
         "Liability & Indemnity": {
             "keywords": ["liability", "indemnify", "indemnification", "hold harmless", "damages", "limitation of liability", "consequential damages"],
