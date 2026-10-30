@@ -21,6 +21,10 @@ if nltk_data_dir not in nltk.data.path:
 # Import the FastAPI application
 from backend.server import app
 
+@app.get("/api/health")
+def api_health_check():
+    return {"status": "ok", "service": "CogniText Vercel Serverless"}
+
 # In Vercel, requests to /api/xyz might arrive at the ASGI app as /api/xyz or as /xyz.
 # Since backend.server defines routes starting with /api/ (e.g. /api/ytb-t01),
 # we ensure that requests without the /api prefix are routed correctly.
@@ -31,7 +35,7 @@ class VercelRouteMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.scope.get("path", "")
         # If Vercel stripped '/api' from the incoming path, add it back so it matches the FastAPI routes
-        if not path.startswith("/api") and path != "/health" and path != "/docs" and path != "/openapi.json":
+        if not path.startswith("/api") and path not in ["/health", "/docs", "/openapi.json"]:
             request.scope["path"] = "/api" + path
         response = await call_next(request)
         return response
