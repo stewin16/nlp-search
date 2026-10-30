@@ -408,7 +408,10 @@ def extract_keywords_and_lemmas(text: str) -> Dict[str, Any]:
                 pos_val = 'v'
             elif tag.startswith('J'):
                 pos_val = 'a'
-            lemma = lemmatizer.lemmatize(word, pos=pos_val)
+            try:
+                lemma = lemmatizer.lemmatize(word, pos=pos_val) if lemmatizer else word
+            except Exception:
+                lemma = word
             lemma_counts[lemma] = lemma_counts.get(lemma, 0) + 1
 
             # Noun phrases (Bigrams of Adj+Noun or Noun+Noun)
@@ -459,7 +462,10 @@ def analyze_vader_sentiment(text: str) -> Dict[str, Any]:
 
     scores = []
     for s in sentences:
-        res = sia.polarity_scores(s)
+        try:
+            res = sia.polarity_scores(s) if sia else {"compound": 0.0}
+        except Exception:
+            res = {"compound": 0.0}
         # convert compound [-1, 1] to [-100, 100]
         score = res["compound"] * 100.0
         scores.append({"sentiment": round(score, 1)})
@@ -480,7 +486,10 @@ def find_similar_words(words: List[str]) -> Dict[str, Dict[str, List[str]]]:
         synonyms = set()
         antonyms = set()
 
-        synsets = wn.synsets(clean_w)
+        try:
+            synsets = wn.synsets(clean_w)
+        except Exception:
+            synsets = []
         for s in synsets:
             # Synonyms from lemma names
             for l in s.lemmas():
@@ -868,7 +877,10 @@ def nlp_disambiguation(payload: DocumentPayload):
 
         for w in words:
             if w.isalnum() and w.lower() not in stop_words and len(w) > 2:
-                lemma = lemmatizer.lemmatize(w.lower())
+                try:
+                    lemma = lemmatizer.lemmatize(w.lower()) if lemmatizer else w.lower()
+                except Exception:
+                    lemma = w.lower()
                 tokens_data.append({"lemma": lemma})
                 phrases_data.append({"tokens": [token_idx]})
                 s_phrases.append(phrase_idx)
