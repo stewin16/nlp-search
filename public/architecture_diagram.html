@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CogniText - System Architecture Diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  body {
+    width: 1920px;
+    height: 1080px;
+    background: #ffffff;
+    background-image: 
+      radial-gradient(at 10% 15%, rgba(255, 0, 86, 0.05) 0px, transparent 50%),
+      radial-gradient(at 90% 85%, rgba(99, 102, 241, 0.06) 0px, transparent 50%),
+      linear-gradient(to right, rgba(15, 23, 42, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+    color: #0f172a;
+    display: flex;
+    flex-direction: column;
+    padding: 56px 72px;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 44px;
+    border-bottom: 1.5px solid rgba(15, 23, 42, 0.08);
+    padding-bottom: 24px;
+  }
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .brand-logo {
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px -5px rgba(255, 0, 86, 0.25);
+  }
+  .title-wrap h1 {
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #0f172a;
+    line-height: 1.1;
+  }
+  .title-wrap h1 span {
+    background: linear-gradient(135deg, #ff0056 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .title-wrap p {
+    font-size: 15px;
+    color: #64748b;
+    font-weight: 500;
+    margin-top: 4px;
+  }
+  .header-badge {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 8px 18px;
+    border-radius: 100px;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  }
+  .header-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #00e5ff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00e5ff;
+  }
+
+  /* Grid Layout: 4 Columns */
+  .grid-container {
+    display: grid;
+    grid-template-columns: 310px 1fr 1fr 320px;
+    gap: 28px;
+    flex: 1;
+    position: relative;
+  }
+
+  /* Flow Arrows Background Canvas / Connectors */
+  .col-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(226, 232, 240, 0.9);
+    border-radius: 24px;
+    padding: 26px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.8);
+    position: relative;
+  }
+  .col-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 40px;
+    right: 40px;
+    height: 3px;
+    border-radius: 0 0 4px 4px;
+  }
+  .col-1::after { background: linear-gradient(90deg, #ff0056, #ff5e62); }
+  .col-2::after { background: linear-gradient(90deg, #00d2ff, #6366f1); }
+  .col-3::after { background: linear-gradient(90deg, #10b981, #059669); }
+  .col-4::after { background: linear-gradient(90deg, #8b5cf6, #d946ef); }
+
+  .col-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  }
+  .col-step {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    background: #f1f5f9;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .col-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+
+  .items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+    justify-content: space-around;
+  }
+
+  .tech-card {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+    position: relative;
+    transition: all 0.2s ease;
+  }
+  .tech-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 10px 24px -6px rgba(15, 23, 42, 0.08);
+  }
+
+  .logo-box {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+  }
+  .logo-box svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .tech-info {
+    flex: 1;
+  }
+  .tech-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 3px;
+  }
+  .tech-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .tech-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: #f1f5f9;
+    color: #475569;
+  }
+  .tech-desc {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.35;
+  }
+
+  /* Tag colors */
+  .tag-react { background: rgba(0, 210, 255, 0.12); color: #0284c7; }
+  .tag-three { background: rgba(15, 23, 42, 0.1); color: #0f172a; }
+  .tag-fastapi { background: rgba(16, 185, 129, 0.12); color: #047857; }
+  .tag-python { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; }
+  .tag-nlp { background: rgba(255, 0, 86, 0.1); color: #e11d48; }
+  .tag-yt { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+  .tag-zoom { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+
+  /* Sub-pills inside complex cards */
+  .pill-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .sub-pill {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+  }
+
+  /* Flow indicators / connectors */
+  .flow-arrow {
+    position: absolute;
+    top: 50%;
+    right: -18px;
+    width: 28px;
+    height: 28px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-50%);
+    z-index: 10;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  }
+  .flow-arrow svg {
+    width: 14px;
+    height: 14px;
+    fill: #ff0056;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: #64748b;
+    border-top: 1px solid rgba(15, 23, 42, 0.06);
+    padding-top: 16px;
+  }
+  .footer-links {
+    display: flex;
+    gap: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .footer-highlight {
+    color: #0f172a;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand-group">
+      <img src="/logo.svg" class="brand-logo" alt="CogniText">
+      <div class="title-wrap">
+        <h1>Cogni<span>Text</span> Architecture</h1>
+        <p>End-to-End Multimodal Video & Document NLP Semantic Processing System</p>
+      </div>
+    </div>
+    <div class="header-badge">
+      Production System Architecture
+    </div>
+  </div>
+
+  <!-- 4-Column Pipeline Grid -->
+  <div class="grid-container">
+
+    <!-- Column 1: Ingestion Sources -->
+    <div class="col-card col-1">
+      <div class="flow-arrow">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="#ff0056" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+      <div class="col-header">
+        <span class="col-title">1. Ingestion Sources</span>
+        <span class="col-step">TIER 01</span>
+      </div>
+      <div class="items-list">
+        <!-- YouTube -->
+        <div class="tech-card">
+          <div class="logo-box" style="background: #fff0f0;">
+            <!-- YouTube Official Icon -->
+            <svg viewBox="0 0 24 24">
+              <path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+          </div>
+          <div class="tech-info">
+            <div class="tech-name-row">
+              <span class="tech-name">YouTube Streams</span>
+              <span class="tech-tag tag-yt">Video / URL</span>
+            </div>
+            <div class="tech-desc">Automated timestamped caption extraction via video ID tokenization.</div>
+          </div>
+        </div>
+
+        <!-- Zoom -->
+        <div class="tech-card">
+          <div class="logo-box" style="background: #edf5ff;">
+            <!-- Zoom Official Icon -->
+            <svg viewBox="0 0 24 24">
+              <path fill="#2D8CFF" d="M4.5 4h10A2.5 2.5 0 0 1 17 6.5v6A2.5 2.5 0 0 1 14.5 15h-10A2.5 2.5 0 0 1 2 12.5v-6A2.5 2.5 0 0 1 4.5 4zm13.7 3.2 4.1-2.5a.8.8 0 0 1 1.2.7v13.2a.8.8 0 0 1-1.2.7l-4.1-2.5a.8.8 0 0 1-.4-.7V7.9a.8.8 0 0 1 .4-.7z"/>
+            </svg>
+          </div>
+          <div class="tech-info">
+            <div class="tech-name-row">
+              <span class="tech-name">Zoom Transcripts</span>
+              <span class="tech-tag tag-zoom">Audio / VTT</span>
+            </div>
+            <div class="tech-desc">Raw multi-speaker audio transcripts, VTT logs & meeting summaries.</div>
+          </div>
+        </div>
+
+        <!-- Legal Documents -->
+        <div class="tech-card">
+          <div class="logo-box" style="background: #faf5ff;">
+            <!-- Document / Scales Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#7e22ce" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </div>
+          <div class="tech-info">
+            <div class="tech-name-row">
+              <span class="tech-name">Legal Documents</span>
+              <span class="tech-tag" style="background: #f3e8ff; color: #7e22ce;">Text / PDF</span>
+            </div>
+            <div class="tech-desc">Complex contracts, NDAs, compliance policies & terms of service.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 2: Client Interface (Frontend) -->
+    <div class="col-card col-2">
+      <div class="flow-arrow">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+      <div class="col-header">
+        <span class="col-title">2. Client Interface</span>
+        <span class="col-step">TIER 02</span>
+      </div>
+      <div class="items-list">
+        <!-- React 18 -->
+        <div class="tech-card">
+          <div class="logo-box" style="background: #f0fdfa;">
+            <!-- React Official Logo -->
+            <svg viewBox="-11.5 -10.23174 23 20.46348">
+              <circle cx="0" cy="0" r="2.05" fill="#61dafb"/>
+              <g stroke="#61dafb" stroke-width="1" fill="none">
+                <ellipse rx="11" ry="4.2"/>
+                <ellipse rx="11" ry="4.2" transform="rotate(60)"/>
+                <ellipse rx="11" ry="4.2" transform="rotate(120)"/>
+              </g>
+            </svg>
+          </div>
+          <div class="tech-info">
+            <div class="tech-name-row">
+              <span class="tech-name">React 18 SPA</span>
+              <span class="tech-tag tag-react">Frontend</span>
+            </div>
+            <div class="tech-desc">Component-driven reactive UI with instant timestamp routing.</div>
+            <div class="pill-group">
+              <span class="sub-pill">React Router v5</span>
+              <span class="sub-pill">Axios HTTP</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Three.js -->
+        <div class="tech-card">
+          <div class="logo-box" style="background: #f8fafc;">
+            <!-- Three.js Official Logo -->
+            <svg viewBox="0 0 24 24" fill="#0f172a">
+              <path d="M12 2 3.5 7.5 12 13l8.5-5.5L12 2zm-8.5 7v9l8.5 4.5v-9L3.5 9zm17 0-8.5 4.5v9l8.5-4.5V9z"/>
+            </svg>
+          </div>
+          <div class="tech-info">
+            <div class="tech-name-row">
+              <span class="tech-name">Three.js 3D Engine</span>
+              <span class="tech-tag tag-three">WebGL 3D</span>
+            </div>
+            <div class="tech-desc">Isometric frosted crystal cards with laser data packet flows.</div>
+            <div class="pill-group">
+              <span class="sub-pill">WebGL Raycasting</span>
+              <span class="sub-pill">Multi-Tiers</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vite & Web Speech -->
+        <div class="tech-card">
+          <div class="logo-box" style="background: #faf5ff;">
+            <!-- Vite Official Logo -->
+            <svg viewBox="0 0 24 24">
+              <path fill="#BD34FE" d="M23.1 3.4 12.7 22.8c-.3.5-1 .5-1.3 0L.9 3.4c-.4-.7.1-1.5.9-1.5h20.4c.8 0 1.3.8.9 1.5z"/>
+              <path fill="#FFD622" d="m13.8 2.6-6.6 9.8c-.2.4 0 .9.5.9h4.3l-2.4 7c-.2.6.5 1 .9.6l7.8-10.2c.3-.4.1-.9-.4-.9h-4.3l2.4-6.4c.2-.5-.4-.9-.8-.8z"/>
+            </svg>
+          </div>
+          <div class="tech-info">
+            <div class="tech-name-row">
+              <span class="tech-name">Vite & Web Speech</span>
+              <span class="tech-tag" style="background: #f5f3ff; color: #7c3aed;">Build & TTS</span>
+            </div>
+            <div class="tech-desc">Sub-second HMR builds + Indian voice (en-IN) speech synthesis.</div>
+            <div class="pill-group">
+              <span class="sub-pill">Indian Accent Audio</span>
+              <span class="sub-pill">ESM Modules</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 3: Backend NLP Intelligence Pipeline -->
+    <div class="col-card col-3">
+      <div class="flow-arrow">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+      <div class="col-header">
+        <span class="col-title">3. Async NLP Pipeline</span>
+        <span class="col-step">TIER 03</span>
+      </div>
+      <div class="items-list">
+        <!-- FastAPI -->
+        <div class="tech-card">
+          <div class="logo-box" style="background: #f0fdf4;">
+            <!-- FastAPI Official Logo -->
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="11" fill="#05998B"/>
+              <path fill="#ffffff" d="M11.5 5.5 6 13h4.5l-1 5.5 6.5-7.5h-4.5l1-5.5z"/>
+            </svg>
+          </div>
+          <div class="tech-info">
+            <div class="tech-name-row">
+              <span class="tech-name">FastAPI Core Server</span>
+              <span class="tech-tag tag-fastapi">REST API</span>
+            </div>
+            <div class="tech-desc">High-throughput asynchronous Python ASGI server on Uvicorn.</div>
+            <div class="pill-group">
+              <span class="sub-pill">CORS Middleware</span>
+              <span class="sub-pill">Pydantic Schema</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Python & NLTK -->
+        <div class="tech-card">
+          <div class="logo-box" style="background: #eff6ff;">
+            <!-- Python Official Logo -->
+            <svg viewBox="0 0 24 24">
+              <path fill="#387EB8" d="M11.9 2c-3.1 0-5 .6-5 2.5v1.9h5.1v.6H4.7c-2 0-3.7 1.2-3.7 3.7 0 2.6 1.6 3.7 3.7 3.7h1.6v-2.2c0-1.6 1.4-2.8 3-2.8h5.1c1.3 0 2.5-1.1 2.5-2.5V4.5C16.9 2.6 15 2 11.9 2zm-1.4 1.3c.5 0 .9.4.9.9s-.4.9-.9.9-.9-.4-.9-.9.4-.9.9-.9z"/>
+              <path fill="#FFE052" d="M12.1 22c3.1 0 5-.6 5-2.5v-1.9H12v-.6h7.3c2 0 3.7-1.2 3.7-3.7 0-2.6-1.6-3.7-3.7-3.7h-1.6v2.2c0 1.6-1.4 2.8-3 2.8H9.6c-1.3 0-2.5 1.1-2.5 2.5v2.3c0 1.9 1.9 2.5 5 2.5zm1.4-1.3c-.5 0-.9-.4-.9-.9s.4-.9.9-.9.9.4.9.9-.4.9-.9.9z"/>
+            </svg>
+          </div>
+          <div class="tech-info">
+            <div class="tech-name-row">
+              <span class="tech-name">Python NLP Engine</span>
+              <span class="tech-tag tag-python">NLTK / VADER</span>
+            </div>
+            <div class="tech-desc">Lemmatization, sentence tokenization, stopword removal & sentiment.</div>
+            <div class="pill-group">
+              <span class="sub-pill">WordNet</span>
+              <span class="sub-pill">SentimentIntensity</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TextRank Algorithm -->
+        <div class="tech-card">
+          <div class="logo-box" style="background: #fff1f2;">
+            <!-- Graph / Network Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="6" cy="6" r="3"></circle>
+              <circle cx="18" cy="6" r="3"></circle>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="18" cy="18" r="3"></circle>
+              <line x1="8.5" y1="7.5" x2="15.5" y2="16.5"></line>
+              <line x1="8.5" y1="16.5" x2="15.5" y2="7.5"></line>
+            </svg>
+          </div>
+          <div class="tech-info">
+            <div class="tech-name-row">
+              <span class="tech-name">TextRank Graph Engine</span>
+              <span class="tech-tag tag-nlp">Algorithms</span>
+            </div>
+            <div class="tech-desc">PageRank-based unsupervised graph ranking for key sentence extraction.</div>
+            <div class="pill-group">
+              <span class="sub-pill">Flesch-Kincaid</span>
+              <span class="sub-pill">Cosine Similarity</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 4: Actionable Deliverables (Outputs) -->
+    <div class="col-card col-4">
+      <div class="col-header">
+        <span class="col-title">4. Actionable Outputs</span>
+        <span class="col-step">TIER 04</span>
+      </div>
+      <div class="items-list">
+        <!-- Summaries -->
+        <div class="tech-card">
+          <div class="logo-box" style="background: #fdf4ff;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="21" y1="10" x2="3" y2="10"></line>
+              <line x1="21" y1="6" x2="3" y2="6"></line>
+              <line x1="21" y1="14" x2="3" y2="14"></line>
+              <line x1="15" y1="18" x2="3" y2="18"></line>
+            </svg>
+          </div>
+          <div class="tech-info">
+            <div class="tech-name-row">
+              <span class="tech-name">Executive Summaries</span>
+              <span class="tech-tag" style="background: #fdf4ff; color: #a855f7;">Ranked</span>
+            </div>
+            <div class="tech-desc">Core takeaways extracted with timestamp-synced bookmarks.</div>
+          </div>
+        </div>
+
+        <!-- Flashcards & Quiz -->
+        <div class="tech-card">
+          <div class="logo-box" style="background: #eff6ff;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <div class="tech-info">
+            <div class="tech-name-row">
+              <span class="tech-name">Concept Flashcards</span>
+              <span class="tech-tag" style="background: #eff6ff; color: #2563eb;">Study Pack</span>
+            </div>
+            <div class="tech-desc">Interactive flashcards & discussion self-eval questions.</div>
+          </div>
+        </div>
+
+        <!-- Risk Matrix & Export -->
+        <div class="tech-card">
+          <div class="logo-box" style="background: #ecfdf5;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <div class="tech-info">
+            <div class="tech-name-row">
+              <span class="tech-name">Legal Risk Matrix</span>
+              <span class="tech-tag" style="background: #ecfdf5; color: #059669;">Compliance</span>
+            </div>
+            <div class="tech-desc">Clause severity classification & export to Markdown / Text.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div>
+      <span class="footer-highlight">CogniText v2.0</span> • Multimodal NLP Architecture Specification
+    </div>
+    <div class="footer-links">
+      <span>FRONTEND: REACT 18 + THREE.JS</span>
+      <span>BACKEND: FASTAPI + PYTHON 3</span>
+      <span>NLP: TEXTRANK + NLTK</span>
+      <span>GITHUB: stewin16/nlp-search</span>
+    </div>
+  </div>
+
+</body>
+</html>

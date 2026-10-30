@@ -14,7 +14,7 @@ import re
 import math
 import random
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
 from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -64,23 +64,173 @@ def clean_text(text: str) -> str:
     return text
 
 
-def extractive_summarize(text: str, word_count: int = 300, ratio: float = 0.5) -> Dict[str, Any]:
+def segment_unpunctuated_text(text: str) -> List[str]:
+    """
+    Intelligently segments unpunctuated spoken text (e.g. YouTube captions, Zoom audio)
+    into syntactically cohesive sentences using pauses, discourse markers, and clauses.
+    """
+    cleaned = clean_text(text)
+    words = cleaned.split()
+    if not words:
+        return []
+
+    boundary_starters = {
+        'today', 'now', 'so', 'first', 'second', 'next', 'then', 'however',
+        'moreover', 'therefore', 'furthermore', 'basically', 'finally', 'welcome',
+        'let', 'lets', 'what', 'why', 'how', 'when', 'where', 'which', 'who',
+        'if', 'because', 'although', 'specifically', 'essentially', 'remember'
+    }
+
+    sentences = []
+    current_tokens = []
+
+    for idx, w in enumerate(words):
+        current_tokens.append(w)
+        clean_w = w.lower().strip(".,!?;:\"'()[]{}")
+
+        word_count = len(current_tokens)
+        next_w = words[idx + 1].lower().strip(".,!?;:\"'()[]{}") if idx + 1 < len(words) else ""
+
+        # Check existing punctuation
+        if w.endswith(('.', '?', '!')) and word_count >= 5:
+            s_text = " ".join(current_tokens).strip()
+            s_text = s_text[0].upper() + s_text[1:]
+            sentences.append(s_text)
+            current_tokens = []
+            continue
+
+        # Check discourse boundary starters or clause length
+        should_split = False
+        if word_count >= 24:
+            should_split = True
+        elif word_count >= 10 and next_w in boundary_starters:
+            should_split = True
+        elif word_count >= 16 and clean_w in {'and', 'but', 'or', 'so', 'because'}:
+            should_split = True
+
+        if should_split and idx + 1 < len(words):
+            s_text = " ".join(current_tokens).strip()
+            if not s_text.endswith(('.', '?', '!')):
+                s_text += "."
+            s_text = s_text[0].upper() + s_text[1:]
+            sentences.append(s_text)
+            current_tokens = []
+
+    if current_tokens:
+        s_text = " ".join(current_tokens).strip()
+        if not s_text.endswith(('.', '?', '!')):
+            s_text += "."
+        s_text = s_text[0].upper() + s_text[1:]
+        sentences.append(s_text)
+
+    return sentences
+
+
+def punctuate_caption_cues(raw_cues: List[Any]) -> Tuple[List[Dict[str, Any]], str]:
+    """
+    Transforms raw YouTube / Zoom caption cues into clean, punctuated sentences
+    while maintaining accurate timestamp mappings for video jumping.
+    """
+    cues = []
+    for item in raw_cues:
+        txt = item.text if hasattr(item, 'text') else (item.get('text', '') if isinstance(item, dict) else str(item))
+        c_txt = clean_text(txt)
+        if c_txt:
+            st = float(item.start if hasattr(item, 'start') else (item.get('start', 0.0) if isinstance(item, dict) else 0.0))
+            dur = float(item.duration if hasattr(item, 'duration') else (item.get('duration', 0.0) if isinstance(item, dict) else 0.0))
+            cues.append({'text': c_txt, 'start': round(st, 2), 'duration': round(dur, 2)})
+
+    if not cues:
+        return [], ""
+
+    punctuated_cues = []
+    punctuated_sentences = []
+    current_tokens = []
+    seg_start = cues[0]['start']
+    prev_end = 0.0
+
+    boundary_starters = {
+        'today', 'now', 'so', 'first', 'second', 'next', 'then', 'however',
+        'moreover', 'therefore', 'furthermore', 'basically', 'finally', 'welcome',
+        'let', 'lets', 'what', 'why', 'how', 'when', 'if', 'because'
+    }
+
+    for item in cues:
+        txt = item['text']
+        st = item['start']
+        dur = item['duration']
+        gap = st - prev_end
+        w_cnt = sum(len(s.split()) for s in current_tokens)
+        first_w = txt.split()[0].lower().strip('.,!?') if txt.split() else ''
+
+        if current_tokens and (gap > 0.45 or w_cnt >= 20 or (w_cnt >= 10 and first_w in boundary_starters)):
+            s_text = ' '.join(current_tokens).strip()
+            if not s_text.endswith(('.', '?', '!')):
+                s_text += '.'
+            s_text = s_text[0].upper() + s_text[1:]
+            punctuated_sentences.append(s_text)
+            punctuated_cues.append({
+                'text': s_text,
+                'start': seg_start,
+                'duration': round(prev_end - seg_start, 2)
+            })
+            current_tokens = []
+            seg_start = st
+
+        current_tokens.append(txt)
+        prev_end = st + dur
+
+    if current_tokens:
+        s_text = ' '.join(current_tokens).strip()
+        if not s_text.endswith(('.', '?', '!')):
+            s_text += '.'
+        s_text = s_text[0].upper() + s_text[1:]
+        punctuated_sentences.append(s_text)
+        punctuated_cues.append({
+            'text': s_text,
+            'start': seg_start,
+            'duration': round(prev_end - seg_start, 2)
+        })
+
+    full_text = ' '.join(punctuated_sentences)
+    return punctuated_cues, full_text
+
+
+def extractive_summarize(text: str, word_count: int = 250, ratio: float = 0.35) -> Dict[str, Any]:
     """
     Extractive sentence summarization based on word frequency scoring and position weighting.
-    Returns summary text, selected sentences, and their character offsets for highlighting.
+    Returns concise summary paragraph, bulleted takeaways, word counts, and character offsets.
     """
     cleaned = clean_text(text)
     if not cleaned:
-        return {"summary": "", "main_sentences": []}
+        return {
+            "summary": "",
+            "key_takeaways": [],
+            "main_sentences": [],
+            "word_count_original": 0,
+            "word_count_summary": 0,
+            "compression_ratio": "0%"
+        }
 
     sentences = sent_tokenize(cleaned)
+    # If text is unpunctuated spoken text, intelligently segment
+    if len(sentences) <= 2 and len(cleaned) > 120:
+        sentences = segment_unpunctuated_text(cleaned)
+        cleaned = " ".join(sentences)
+
+    total_orig_words = len(cleaned.split())
+
     if len(sentences) <= 2:
         return {
             "summary": cleaned,
-            "main_sentences": [{"start": 0, "end": len(cleaned), "score": 10.0}]
+            "key_takeaways": [cleaned[:180] + "..." if len(cleaned) > 180 else cleaned],
+            "main_sentences": [{"start": 0, "end": len(cleaned), "score": 10.0, "text": cleaned}],
+            "word_count_original": total_orig_words,
+            "word_count_summary": total_orig_words,
+            "compression_ratio": "0%"
         }
 
-    # Calculate word frequencies
+    # Word frequencies
     words = word_tokenize(cleaned.lower())
     freq_table: Dict[str, float] = {}
     for w in words:
@@ -96,7 +246,6 @@ def extractive_summarize(text: str, word_count: int = 300, ratio: float = 0.5) -
     current_search_pos = 0
 
     for idx, sentence in enumerate(sentences):
-        # find start and end offset in cleaned text
         start_pos = cleaned.find(sentence, current_search_pos)
         if start_pos == -1:
             start_pos = current_search_pos
@@ -110,7 +259,7 @@ def extractive_summarize(text: str, word_count: int = 300, ratio: float = 0.5) -
             for sw in s_words:
                 if sw in freq_table:
                     score += freq_table[sw]
-            # Normalize by sentence length with slight boost for earlier sentences
+            # Normalize with slight early-sentence bias
             score = (score / math.sqrt(word_len)) * (1.0 + (1.0 / (idx + 1)) * 0.2)
 
         sentence_scores.append({
@@ -123,9 +272,8 @@ def extractive_summarize(text: str, word_count: int = 300, ratio: float = 0.5) -
         })
 
     # Pick top scoring sentences
-    target_sentences = max(2, int(len(sentences) * ratio))
+    target_sentences = max(2, min(7, int(len(sentences) * ratio)))
     if word_count > 0:
-        # Sort by score descending to choose which sentences to keep
         ranked = sorted(sentence_scores, key=lambda x: x["score"], reverse=True)
         selected_indices = set()
         total_words = 0
@@ -138,18 +286,32 @@ def extractive_summarize(text: str, word_count: int = 300, ratio: float = 0.5) -
         ranked = sorted(sentence_scores, key=lambda x: x["score"], reverse=True)[:target_sentences]
         selected_indices = {item["index"] for item in ranked}
 
-    # Reorder chronologically
+    # Reorder chronologically for natural reading flow
     selected_sentences = [s for s in sentence_scores if s["index"] in selected_indices]
     summary_text = " ".join([s["text"] for s in selected_sentences])
+    summary_words = len(summary_text.split())
+
+    # Build clean bulleted takeaways
+    key_takeaways = []
+    for s in selected_sentences:
+        clean_s = s["text"].strip()
+        if len(clean_s) > 15:
+            key_takeaways.append(clean_s)
 
     main_sentences_data = [
-        {"start": s["start"], "end": s["end"], "score": round(s["score"], 2)}
+        {"start": s["start"], "end": s["end"], "score": round(s["score"], 2), "text": s["text"]}
         for s in selected_sentences
     ]
 
+    comp_ratio = f"{round((1.0 - summary_words / max(1, total_orig_words)) * 100, 1)}%"
+
     return {
         "summary": summary_text,
-        "main_sentences": main_sentences_data
+        "key_takeaways": key_takeaways,
+        "main_sentences": main_sentences_data,
+        "word_count_original": total_orig_words,
+        "word_count_summary": summary_words,
+        "compression_ratio": comp_ratio
     }
 
 
@@ -286,50 +448,146 @@ def find_similar_words(words: List[str]) -> Dict[str, Dict[str, List[str]]]:
 
 
 def build_quiz_from_text(text: str, key_notes: List[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-    """Builds multiple choice questions by masking keywords in long sentences."""
+    """
+    Builds robust, high-quality multiple choice questions (MCQ) from text.
+    Extracts key concepts, crafts cloze & conceptual prompts, generates plausible distractors,
+    and includes contextual explanations.
+    """
     sentences = sent_tokenize(text)
-    lemmas = [k["value"] for k in key_notes] if key_notes else []
+    if len(sentences) <= 2 and len(text) > 120:
+        sentences = segment_unpunctuated_text(text)
 
+    # Concept gathering
+    meta = extract_keywords_and_lemmas(text)
+    lemmas = [k["value"] for k in key_notes] if key_notes else []
     if not lemmas:
-        meta = extract_keywords_and_lemmas(text)
         lemmas = [k["value"] for k in meta["mainLemmas"]]
+
+    # Filter out conversational filler and generic speech words
+    GENERIC_FILLER = {
+        'video', 'particular', 'going', 'channel', 'welcome', 'youtube', 'think',
+        'thing', 'something', 'today', 'hello', 'krishna', 'topic', 'many', 'still',
+        'clear', 'miss', 'know', 'flow', 'want', 'said', 'tell', 'show', 'make',
+        'good', 'best', 'great', 'also', 'just', 'like', 'need', 'look', 'come'
+    }
+
+    key_phrases = [p["lemma"].lower() for p in meta.get("entities", []) if len(p["lemma"]) > 3]
+    candidate_terms = []
+
+    # Prioritize multi-word technical entities first, then strong single lemmas
+    for p in key_phrases:
+        clean_p = p.strip()
+        if clean_p and not any(f == clean_p for f in GENERIC_FILLER) and clean_p not in candidate_terms:
+            candidate_terms.append(clean_p)
+
+    for l in lemmas:
+        clean_l = l.lower().strip()
+        if len(clean_l) > 3 and clean_l not in GENERIC_FILLER and clean_l not in candidate_terms:
+            candidate_terms.append(clean_l)
+
+    # Curated backup educational domain distractors if needed
+    DOMAIN_DISTRACTOR_POOL = [
+        "Machine Learning", "Neural Networks", "Deep Learning", "Supervised Learning",
+        "Linear Regression", "Gradient Descent", "Feature Engineering", "Natural Language Processing",
+        "Tokenization", "Cross Entropy", "Decision Trees", "Backpropagation",
+        "Data Augmentation", "Vector Embeddings", "Overfitting Prevention"
+    ]
 
     quiz_list = []
     used_answers = set()
+    used_sentences = set()
 
     for sentence in sentences:
-        if len(sentence) < 60:
+        s_words = sentence.split()
+        if len(s_words) < 7 or len(s_words) > 42:
             continue
-        words = word_tokenize(sentence)
-        for lemma in lemmas:
-            if lemma in used_answers or len(lemma) < 3:
+        if sentence in used_sentences:
+            continue
+
+        for term in candidate_terms:
+            if term in used_answers or len(term) < 3:
                 continue
-            # Check if lemma is in sentence
-            pattern = re.compile(rf"\b{re.escape(lemma)}\b", re.IGNORECASE)
-            if pattern.search(sentence):
-                question = pattern.sub("__________", sentence)
-                sim_res = find_similar_words([lemma])
-                distractors = sim_res.get(lemma, {}).get("synms", [])[:3]
 
-                # Ensure 3 distractors
-                pool = [l for l in lemmas if l != lemma and l not in distractors]
-                while len(distractors) < 3 and pool:
-                    distractors.append(pool.pop(0))
-                while len(distractors) < 3:
-                    distractors.append("None of these")
+            pattern = re.compile(rf"\b{re.escape(term)}\b", re.IGNORECASE)
+            match = pattern.search(sentence)
+            if match:
+                # Mask concept
+                cloze_sentence = pattern.sub("__________", sentence).strip()
+                matched_text = match.group(0)
 
-                options = distractors[:3] + [lemma]
-                random.shuffle(options)
+                # Collect distinct distractors
+                distractors = []
+                for other in candidate_terms:
+                    if (other.lower() != term.lower() and
+                        other.lower() not in term.lower() and
+                        term.lower() not in other.lower() and
+                        len(other) > 2):
+                        distractors.append(other)
+                        if len(distractors) >= 3:
+                            break
+
+                # Fallback to WordNet synonyms/antonyms
+                if len(distractors) < 3:
+                    sim_res = find_similar_words([term])
+                    for s in sim_res.get(term, {}).get("synms", []):
+                        if (s.lower() != term.lower() and
+                            s.lower() not in term.lower() and
+                            term.lower() not in s.lower() and
+                            s not in distractors):
+                            distractors.append(s)
+                            if len(distractors) >= 3:
+                                break
+
+                # Fallback to domain pool
+                pool_idx = 0
+                while len(distractors) < 3 and pool_idx < len(DOMAIN_DISTRACTOR_POOL):
+                    cand = DOMAIN_DISTRACTOR_POOL[pool_idx]
+                    if cand.lower() != term.lower() and cand not in distractors:
+                        distractors.append(cand)
+                    pool_idx += 1
+
+                # Format options cleanly with proper capitalization
+                display_answer = matched_text.capitalize() if matched_text.islower() else matched_text
+                options = [d.capitalize() if d.islower() else d for d in distractors[:3]]
+                options.append(display_answer)
+
+                # Deduplicate and ensure exactly 4 options
+                seen_opts = set()
+                unique_options = []
+                for o in options:
+                    if o.lower() not in seen_opts:
+                        seen_opts.add(o.lower())
+                        unique_options.append(o)
+
+                while len(unique_options) < 4:
+                    for d in DOMAIN_DISTRACTOR_POOL:
+                        if d.lower() not in seen_opts:
+                            seen_opts.add(d.lower())
+                            unique_options.append(d)
+                            if len(unique_options) == 4:
+                                break
+
+                random.shuffle(unique_options)
+
+                # Formulate intelligent question prompt
+                clean_prompt = f"Fill in the blank: \"{cloze_sentence}\""
 
                 quiz_list.append({
-                    "sentence": question,
-                    "answer": lemma,
-                    "options": options
+                    "id": len(quiz_list) + 1,
+                    "question": "Which term or concept best completes the statement from the lecture?",
+                    "sentence": cloze_sentence,
+                    "prompt": clean_prompt,
+                    "answer": display_answer,
+                    "options": unique_options,
+                    "explanation": f"Source excerpt: \"{sentence.strip()}\"",
+                    "category": "Key Concept"
                 })
-                used_answers.add(lemma)
+
+                used_answers.add(term)
+                used_sentences.add(sentence)
                 break
 
-        if len(quiz_list) >= 5:
+        if len(quiz_list) >= 7:
             break
 
     return quiz_list
@@ -362,12 +620,12 @@ def health():
 @app.get("/api/ytb-t01")
 def get_youtube_transcript_and_summary(video_id: str = Query(...)):
     """
-    Fetches transcript for video_id and returns punctuated transcript and extractive summary.
+    Fetches transcript for video_id, reconstructs natural punctuated sentences,
+    and returns concise extractive summary, key takeaways, and timestamp cues.
     """
     try:
         raw_transcripts = None
         try:
-            # Modern API pattern (youtube_transcript_api v0.6+)
             api = YouTubeTranscriptApi()
             raw_transcripts = api.fetch(video_id, languages=['en', 'en-US', 'en-GB'])
         except Exception as e1:
@@ -375,7 +633,6 @@ def get_youtube_transcript_and_summary(video_id: str = Query(...)):
             try:
                 api = YouTubeTranscriptApi()
                 t_list = api.list(video_id)
-                # Try finding any transcript or first available
                 try:
                     tr = t_list.find_transcript(['en', 'en-US', 'en-GB', 'es', 'fr', 'de'])
                 except Exception:
@@ -389,31 +646,28 @@ def get_youtube_transcript_and_summary(video_id: str = Query(...)):
         if not raw_transcripts:
             raise ValueError(f"No transcripts found for video {video_id}")
 
-        transcripts = []
-        full_text = ""
-        for t in raw_transcripts:
-            txt = t.text if hasattr(t, 'text') else (t.get('text', '') if isinstance(t, dict) else str(t))
-            c_txt = clean_text(txt)
-            if c_txt:
-                st = float(t.start if hasattr(t, 'start') else (t.get('start', 0.0) if isinstance(t, dict) else 0.0))
-                dur = float(t.duration if hasattr(t, 'duration') else (t.get('duration', 0.0) if isinstance(t, dict) else 0.0))
-                transcripts.append({
-                    "text": c_txt,
-                    "start": round(st, 2),
-                    "duration": round(dur, 2)
-                })
-                full_text += c_txt + " "
+        # Punctuate and align cues for timestamps
+        transcripts, full_text = punctuate_caption_cues(raw_transcripts)
+        if not full_text:
+            raise ValueError("Transcript text was empty after processing.")
 
-        summary_res = extractive_summarize(full_text, word_count=250, ratio=0.4)
+        summary_res = extractive_summarize(full_text, word_count=200, ratio=0.25)
 
         return {
             "transcripts": transcripts,
             "summary": summary_res["summary"],
-            "full_transcript": full_text.strip()
+            "key_takeaways": summary_res["key_takeaways"],
+            "full_transcript": full_text.strip(),
+            "stats": {
+                "original_words": summary_res["word_count_original"],
+                "summary_words": summary_res["word_count_summary"],
+                "compression": summary_res["compression_ratio"],
+                "read_time_minutes": round(summary_res["word_count_summary"] / 130, 1)
+            }
         }
     except Exception as e:
         logger.error(f"Error fetching YouTube transcript: {e}")
-        # Provide clean, representative fallback transcript so the UI never crashes
+        # Provide clean, representative fallback transcript
         fallback_transcripts = [
             {"start": 0.0, "duration": 4.5, "text": "Welcome to this introduction to Natural Language Processing and modern AI."},
             {"start": 4.5, "duration": 5.0, "text": "In this video tutorial, we analyze speech recognition, sentiment classification, and semantic analysis."},
@@ -423,11 +677,18 @@ def get_youtube_transcript_and_summary(video_id: str = Query(...)):
             {"start": 26.0, "duration": 6.0, "text": "Finally, we can automatically test our comprehension using automated smart quizzes and sentiment charts."}
         ]
         fallback_text = " ".join([c["text"] for c in fallback_transcripts])
-        summary_res = extractive_summarize(fallback_text, word_count=100, ratio=0.6)
+        summary_res = extractive_summarize(fallback_text, word_count=100, ratio=0.5)
         return {
             "transcripts": fallback_transcripts,
             "summary": summary_res["summary"],
+            "key_takeaways": summary_res["key_takeaways"],
             "full_transcript": fallback_text,
+            "stats": {
+                "original_words": summary_res["word_count_original"],
+                "summary_words": summary_res["word_count_summary"],
+                "compression": summary_res["compression_ratio"],
+                "read_time_minutes": 1.0
+            },
             "notice": "Demonstration transcript provided (captions unavailable or disabled by YouTube creator)"
         }
 
@@ -439,8 +700,16 @@ def summarize_text_endpoint(req: TextSummaryRequest):
     if not text and req.document:
         text = req.document.get("text", "")
     text = text or ""
-    res = extractive_summarize(text, word_count=req.word_count or 300, ratio=req.ratio or 0.5)
-    return {"summary": res["summary"]}
+    res = extractive_summarize(text, word_count=req.word_count or 250, ratio=req.ratio or 0.35)
+    return {
+        "summary": res["summary"],
+        "key_takeaways": res["key_takeaways"],
+        "stats": {
+            "original_words": res["word_count_original"],
+            "summary_words": res["word_count_summary"],
+            "compression": res["compression_ratio"]
+        }
+    }
 
 
 @app.post("/api/ytb-similarwords-01")
@@ -454,16 +723,23 @@ def similar_words_endpoint(req: WordsRequest):
 @app.post("/api/nlp/relevants")
 @app.post("/v2/analyze/standard/{language}/relevants")
 def nlp_relevants(payload: DocumentPayload):
-    """Emulates Expert.ai /relevants API: returns topics, mainSentences, mainLemmas."""
+    """Emulates Expert.ai /relevants API: returns topics, mainSentences, mainLemmas, summary, and takeaways."""
     text = payload.document.get("text", "")
-    summary_data = extractive_summarize(text, word_count=350, ratio=0.45)
+    summary_data = extractive_summarize(text, word_count=250, ratio=0.35)
     meta = extract_keywords_and_lemmas(text)
 
     return {
         "data": {
             "topics": meta["topics"],
             "mainSentences": summary_data["main_sentences"],
-            "mainLemmas": meta["mainLemmas"]
+            "mainLemmas": meta["mainLemmas"],
+            "summary": summary_data["summary"],
+            "keyTakeaways": summary_data["key_takeaways"],
+            "stats": {
+                "originalWords": summary_data["word_count_original"],
+                "summaryWords": summary_data["word_count_summary"],
+                "compressionRatio": summary_data["compression_ratio"]
+            }
         }
     }
 

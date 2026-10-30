@@ -5,7 +5,30 @@ import './legal.css';
 import {RedOutlineButton} from "../../Components/RedOutlineButton";
 import NlpInsights from "../../Components/NlpInsights";
 
-const DEFAULT_LEGAL_TEXT = "This Privacy Policy describes how CogniText collects, uses, and discloses information when you use our services. We collect personal data that you provide directly to us when registering an account, including your email address and profile credentials. When you interact with our platform, we automatically collect log data such as your IP address, browser type, operating system, and access timestamps. We process this information to operate, maintain, and enhance the functionality of our natural language processing features. We do not sell your personal data to third parties. We may disclose personal information if required by law, subpoena, or legal proceeding, or if we determine in good faith that disclosure is necessary to protect our rights, prevent fraud, or ensure user safety. You retain the right to access, rectify, or request deletion of your personal data at any time by contacting privacy@cognitext.ai. We employ industry-standard encryption protocols and security controls to safeguard data against unauthorized access, destruction, or alteration.";
+const DEFAULT_LEGAL_TEXT = `MASTER SERVICE AGREEMENT AND PRIVACY POLICY
+
+1. Overview and Acceptance of Terms
+This Master Service Agreement and Privacy Policy governs the access and utilization of CogniText AI multimodal NLP intelligence services. By accessing the platform, subscribing to our API endpoints, or uploading enterprise datasets, you agree to comply with all terms set forth herein. If you do not agree with these stipulations, you must immediately discontinue use and cancel your account.
+
+2. Personal Data Protection and Privacy Controls
+CogniText processes personal data in accordance with modern data privacy standards, including GDPR and CCPA requirements. We collect personal data that users provide directly during account registration, including administrative contact email addresses, billing coordinates, and access credentials. When interacting with our services, automated systems log IP addresses, browser types, and session timestamps. We deploy industry-standard encryption protocols and security controls across all database infrastructure. We do not sell personal data to third parties. We may disclose personal data to certified cloud hosting partners strictly under confidentiality obligations, or when required by legal proceeding or subpoena.
+
+3. Intellectual Property Rights and Ownership
+All software algorithms, natural language pipelines, proprietary models, user interfaces, trademarks, and documentation associated with CogniText are the exclusive intellectual property of CogniText AI and its licensors. CogniText grants the client a non-exclusive, non-transferable, revocable license to utilize our search, summarization, and transcription features for authorized internal business purposes. The client retains sole ownership and copyright over all proprietary documents, Zoom audio files, and text corpora uploaded to the system.
+
+4. Limitation of Liability and Indemnification
+To the maximum extent permitted by applicable law, neither party shall be held liable for any indirect, incidental, punitive, or consequential damages arising out of the performance or failure of the AI search models. In no event shall the total aggregate liability of CogniText exceed the amount paid by the customer in the twelve months preceding the dispute. The customer agrees to defend, indemnify, and hold harmless CogniText and its officers against any third-party claims, liabilities, damages, or losses resulting from unauthorized data transmission or willful breach of these terms.
+
+5. Termination and Service Cancellation
+Either party may terminate this agreement without cause upon thirty (30) days written notice. In the event of a material breach, CogniText reserves the right to immediately suspend or execute cancellation of user access without prior formal notice. Upon termination, client access credentials will be revoked, and all cached text files, transcripts, and temporary embeddings will be permanently destroyed within sixty (60) days unless retention is required by statute.
+
+6. Governing Law, Dispute Resolution, and Arbitration
+This agreement shall be interpreted and governed by the laws of the jurisdiction in which CogniText AI is incorporated, without regard to conflict of law principles. Any dispute or claim arising out of or relating to this agreement shall be submitted to binding arbitration conducted before a neutral arbitration tribunal. Both parties agree that any court or legal proceeding shall take place exclusively within competent regional commercial courts.
+
+7. Action Items and Compliance Next Steps
+The compliance officer must review the external audit report quarterly.
+The administrative team should update all API encryption keys every six months.
+The enterprise customer must notify CogniText immediately upon discovering any unauthorized security breach.`;
 
 const Legal = () => {
     const [transcript, setTranscript] = React.useState(DEFAULT_LEGAL_TEXT);
@@ -26,9 +49,8 @@ const Legal = () => {
         if (!e.target.files || e.target.files.length === 0) return;
         const reader = new FileReader();
         reader.onload = async (evt) => {
-            let text = evt.target.result;
-            text = text.replace(/\r?\n|\r/g, " ");
-            text = text.split('"').join('');
+            const raw = evt.target.result || "";
+            const text = raw.replace(/\r\n/g, "\n").trim();
             setCaptions(text);
             setTranscript(text);
         };
@@ -115,7 +137,7 @@ const Legal = () => {
             html.push(<span key="tail">{transcript.substring(prev)}</span>);
         }
 
-        return <div style={{lineHeight: '1.8', fontSize: '15px'}}>{html}</div>;
+        return <div style={{lineHeight: '1.8', fontSize: '15px', whiteSpace: 'pre-wrap'}}>{html}</div>;
     };
 
     const getKeyElements = async (text) => {
@@ -173,8 +195,10 @@ const Legal = () => {
                         <div className="grid-item">
                             <header className="App-header">
                                 {captions.length > 0 ? (
-                                    <div className="transcript-legal" style={{maxHeight: '300px', overflowY: 'auto', padding: '15px', background: '#fcfcfc', borderRadius: '8px', border: '1px solid #eee'}}>
-                                        <p style={{fontSize: '14px', lineHeight: '1.6'}}>{captions.substring(0, 1500)}...</p>
+                                    <div className="transcript-legal" style={{maxHeight: '340px', overflowY: 'auto', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'inherit'}}>
+                                        <p style={{fontSize: '14px', lineHeight: '1.7', color: '#1e293b', margin: 0}}>
+                                            {captions.length > 2500 ? captions.substring(0, 2500) + "\n\n[... Remaining content loaded for analysis ...]" : captions}
+                                        </p>
                                     </div>
                                 ) : (
                                     <div className="dummy-legal"/>

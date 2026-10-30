@@ -235,6 +235,7 @@ button:focus {
 .brand-accent {
   background: linear-gradient(135deg, #ff0056 0%, #ff5e62 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 800;
 }

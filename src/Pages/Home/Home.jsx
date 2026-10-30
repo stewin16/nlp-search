@@ -10,6 +10,8 @@ import Dictaphone from "../../Components/Dictaphone";
 import {SimilarWords} from "../../Components/SimilarWords";
 import {GenerateQuiz} from "../../Components/GenerateQuiz";
 import NlpInsights from "../../Components/NlpInsights";
+import McqQuiz from "../../Components/McqQuiz";
+import ExecutiveSummary from "../../Components/ExecutiveSummary";
 import _ from "lodash";
 
 const Home = () => {
@@ -25,6 +27,10 @@ const Home = () => {
     const [startTime, setStartTime] = React.useState(0);
     const [keyNotes, setKeyNotes] = React.useState([]);
     const [summary, setSummary] = React.useState([]);
+    const [executiveSummary, setExecutiveSummary] = React.useState("");
+    const [keyTakeaways, setKeyTakeaways] = React.useState([]);
+    const [summaryStats, setSummaryStats] = React.useState({});
+    const [mainSentences, setMainSentences] = React.useState([]);
     const [quiz, setQuiz] = React.useState([]);
     const [matchedCaptionFound, setMatchedCaptionFound] = React.useState(true);
     const [keyMatchedCaptionFound, setKeyMatchedCaptionFound] = React.useState(true);
@@ -61,16 +67,25 @@ const Home = () => {
             try {
                 const res = await axios.get(`/api/ytb-t01?video_id=${vid}`);
                 setLoader(false);
-                const tempTranscript = res.data.summary || res.data.full_transcript || "";
-                setTranscript(tempTranscript);
+                const fullText = res.data.full_transcript || res.data.summary || "";
+                setTranscript(fullText);
+                setExecutiveSummary(res.data.summary || "");
+                setKeyTakeaways(res.data.key_takeaways || []);
+                setSummaryStats(res.data.stats || {});
                 setCaptions(res.data.transcripts || []);
 
-                const keyData = await getKeyElements(tempTranscript);
+                const keyData = await getKeyElements(fullText);
                 if (keyData) {
                     const extractedTopics = (keyData['topics'] || []).map(t => t.label);
                     setTopics(extractedTopics.slice(0, 5));
                     setSummary(keyData['mainSentences'] || []);
+                    setMainSentences(keyData['mainSentences'] || []);
                     setKeyNotes(keyData['mainLemmas'] || []);
+                    if (!res.data.summary && keyData['summary']) {
+                        setExecutiveSummary(keyData['summary']);
+                        setKeyTakeaways(keyData['keyTakeaways'] || []);
+                        setSummaryStats(keyData['stats'] || {});
+                    }
                     setQuiz([]);
                 }
             } catch (err) {
@@ -396,9 +411,16 @@ const Home = () => {
                         <div className="row">
                             {vis1 && (
                                 <div className="col-md-12">
-                                    <h2>Summary (Highlighted Key Sentences)</h2>
-                                    {summaryLoader ? <Loader/> : ""}
-                                    {transcript.length > 0 ? <div>{getSummary()}</div> : ""}
+                                    <ExecutiveSummary
+                                        summary={executiveSummary}
+                                        keyTakeaways={keyTakeaways}
+                                        transcript={transcript}
+                                        mainSentences={mainSentences.length > 0 ? mainSentences : summary}
+                                        captions={captions}
+                                        stats={summaryStats}
+                                        onSeek={(time) => setStartTime(time)}
+                                        title="YouTube Video Lecture Intelligence Summary"
+                                    />
                                 </div>
                             )}
 
@@ -487,37 +509,21 @@ const Home = () => {
 
                             {vis5 && (
                                 <div className="col-md-12">
-                                    <h2>Smart Comprehension Quiz</h2>
-                                    {quizLoader ? <Loader/> : ""}
-                                    <ol>
-                                        {quiz.length > 0 ? quiz.map((q, qIndex) => (
-                                            <li key={qIndex} className="mb-4">
-                                                <h4 className="color-primary fontsize-sm">{q?.sentence}</h4>
-                                                <ol type="A">
-                                                    {q?.options.map((o, optIndex) => (
-                                                        <li key={optIndex}
-                                                            onClick={(e) => {
-                                                                const feedbackEl = document.getElementById(`feedback-${qIndex}`);
-                                                                if (feedbackEl) {
-                                                                    if (e.target.innerText.trim().toLowerCase() === q.answer.trim().toLowerCase()) {
-                                                                        feedbackEl.innerHTML = '<span style="color: green; font-weight: bold;">&#10004; Correct! Great job!</span>';
-                                                                    } else {
-                                                                        feedbackEl.innerHTML = `<span style="color: red; font-weight: bold;">&#10008; Incorrect. The correct answer is: "${q.answer}"</span>`;
-                                                                    }
-                                                                }
-                                                            }}
-                                                            className="color-dark fontsize-sm option"
-                                                            style={{textTransform: "capitalize", cursor: "pointer", padding: "4px 8px"}}>
-                                                            {o}
-                                                        </li>
-                                                    ))}
-                                                </ol>
-                                                <p id={`feedback-${qIndex}`} className="mt-2"/>
-                                            </li>
-                                        )) : (
-                                            !quizLoader ? <p className="text-muted">Click "Generate Quiz" to create questions from this lecture.</p> : null
-                                        )}
-                                    </ol>
+                                    {quizLoader ? (
+                                        <div className="text-center py-5">
+                                            <Loader/>
+                                            <p className="text-muted mt-2">Generating multiple-choice questions from lecture concepts...</p>
+                                        </div>
+                                    ) : (
+                                        <McqQuiz
+                                            questions={quiz}
+                                            onRetake={() => {
+                                                setQuiz([]);
+                                                getQuiz();
+                                            }}
+                                            title="Smart Lecture Comprehension Quiz (MCQ)"
+                                        />
+                                    )}
                                 </div>
                             )}
                         </div>

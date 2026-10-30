@@ -16,7 +16,15 @@ export const GenerateQuiz = async (transcript, keyNotes, token) => {
         // Try direct high-accuracy NLP quiz generator first
         const directRes = await axios.post(`/api/nlp/quiz`, payload, {headers});
         if (directRes.data && directRes.data.questions && directRes.data.questions.length > 0) {
-            return directRes.data.questions;
+            return directRes.data.questions.map((q, idx) => ({
+                id: q.id || idx + 1,
+                prompt: q.prompt || q.question || `Fill in the blank: "${q.sentence}"`,
+                sentence: q.sentence,
+                answer: q.answer,
+                options: q.options || [],
+                explanation: q.explanation || `Derived from lecture text.`,
+                category: q.category || 'Key Concept'
+            }));
         }
 
         // Fallback to disambiguation tokens endpoint

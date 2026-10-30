@@ -7,6 +7,8 @@ import Dictaphone from "../../Components/Dictaphone";
 import {SimilarWords} from "../../Components/SimilarWords";
 import {GenerateQuiz} from "../../Components/GenerateQuiz";
 import NlpInsights from "../../Components/NlpInsights";
+import McqQuiz from "../../Components/McqQuiz";
+import ExecutiveSummary from "../../Components/ExecutiveSummary";
 import _ from "lodash";
 
 const SAMPLE_ZOOM_CAPTIONS = [
@@ -30,6 +32,10 @@ const Zoom = () => {
     const [topics, setTopics] = React.useState([]);
     const [keyNotes, setKeyNotes] = React.useState([]);
     const [summary, setSummary] = React.useState([]);
+    const [executiveSummary, setExecutiveSummary] = React.useState("");
+    const [keyTakeaways, setKeyTakeaways] = React.useState([]);
+    const [summaryStats, setSummaryStats] = React.useState({});
+    const [mainSentences, setMainSentences] = React.useState([]);
     const [quiz, setQuiz] = React.useState([]);
     const [matchedCaptionFound, setMatchedCaptionFound] = React.useState(true);
     const [keyMatchedCaptionFound, setKeyMatchedCaptionFound] = React.useState(true);
@@ -102,17 +108,20 @@ const Zoom = () => {
         try {
             const payload = {
                 text: transcript,
-                word_count: 500
+                word_count: 250
             };
             const res = await axios.post(`/api/ytb-summary-01`, payload);
-            if (res.data && res.data.summary) {
-                setTranscript(res.data.summary);
-                const data = await getKeyElements(res.data.summary);
+            if (res.data) {
+                setExecutiveSummary(res.data.summary || "");
+                setKeyTakeaways(res.data.key_takeaways || []);
+                setSummaryStats(res.data.stats || {});
+                const data = await getKeyElements(transcript);
                 setLoader(false);
                 if (data) {
                     const topicLabels = (data['topics'] || []).map(topic => topic.label);
                     setTopics(topicLabels.slice(0, 5));
                     setSummary(data['mainSentences'] || []);
+                    setMainSentences(data['mainSentences'] || []);
                     setKeyNotes(data['mainLemmas'] || []);
                     setQuiz([]);
                 }
@@ -388,8 +397,26 @@ const Zoom = () => {
                                     </RedOutlineButton>
                                 </div>
                                 <div className="inline me-2 mb-2">
-                                    <RedOutlineButton onClick={() => {
+                                    <RedOutlineButton onClick={async () => {
                                         update(1);
+                                        if (!executiveSummary && transcript) {
+                                            setSummaryLoader(true);
+                                            try {
+                                                const res = await axios.post(`/api/ytb-summary-01`, {
+                                                    text: transcript,
+                                                    word_count: 250
+                                                });
+                                                if (res.data) {
+                                                    setExecutiveSummary(res.data.summary || "");
+                                                    setKeyTakeaways(res.data.key_takeaways || []);
+                                                    setSummaryStats(res.data.stats || {});
+                                                }
+                                            } catch (e) {
+                                                console.error("Summary error:", e);
+                                            } finally {
+                                                setSummaryLoader(false);
+                                            }
+                                        }
                                     }}>
                                         Get Summary
                                     </RedOutlineButton>
@@ -416,9 +443,22 @@ const Zoom = () => {
                         <div className="row">
                             {vis1 && (
                                 <div className="col-md-12">
-                                    <h2>Summary (Highlighted Key Sentences)</h2>
-                                    {summaryLoader ? <Loader/> : ""}
-                                    {transcript.length > 0 ? <div>{getSummary()}</div> : ""}
+                                    {summaryLoader ? (
+                                        <div className="text-center py-5">
+                                            <Loader />
+                                            <p className="text-muted mt-2">Generating executive lecture summary and key takeaways...</p>
+                                        </div>
+                                    ) : (
+                                        <ExecutiveSummary
+                                            summary={executiveSummary}
+                                            keyTakeaways={keyTakeaways}
+                                            transcript={transcript}
+                                            mainSentences={mainSentences.length > 0 ? mainSentences : summary}
+                                            captions={captions}
+                                            stats={summaryStats}
+                                            title="Zoom Lecture Intelligence Summary"
+                                        />
+                                    )}
                                 </div>
                             )}
 
@@ -500,37 +540,21 @@ const Zoom = () => {
 
                             {vis5 && (
                                 <div className="col-md-12">
-                                    <h2>Lecture Comprehension Quiz</h2>
-                                    {quizLoader ? <Loader/> : ""}
-                                    <ol>
-                                        {quiz.length > 0 ? quiz.map((q, qIndex) => (
-                                            <li key={qIndex} className="mb-4">
-                                                <h4 className="color-primary fontsize-sm">{q?.sentence}</h4>
-                                                <ol type="A">
-                                                    {q?.options.map((o, optIndex) => (
-                                                        <li key={optIndex}
-                                                            onClick={(e) => {
-                                                                const feedbackEl = document.getElementById(`zoom-feedback-${qIndex}`);
-                                                                if (feedbackEl) {
-                                                                    if (e.target.innerText.trim().toLowerCase() === q.answer.trim().toLowerCase()) {
-                                                                        feedbackEl.innerHTML = '<span style="color: green; font-weight: bold;">&#10004; Correct! Great job!</span>';
-                                                                    } else {
-                                                                        feedbackEl.innerHTML = `<span style="color: red; font-weight: bold;">&#10008; Incorrect. The correct answer is: "${q.answer}"</span>`;
-                                                                    }
-                                                                }
-                                                            }}
-                                                            className="color-dark fontsize-sm option"
-                                                            style={{textTransform: "capitalize", cursor: "pointer", padding: "4px 8px"}}>
-                                                            {o}
-                                                        </li>
-                                                    ))}
-                                                </ol>
-                                                <p id={`zoom-feedback-${qIndex}`} className="mt-2"/>
-                                            </li>
-                                        )) : (
-                                            !quizLoader ? <p className="text-muted">Click "Generate Quiz" to create questions.</p> : null
-                                        )}
-                                    </ol>
+                                    {quizLoader ? (
+                                        <div className="text-center py-5">
+                                            <Loader/>
+                                            <p className="text-muted mt-2">Generating multiple-choice questions from Zoom lecture concepts...</p>
+                                        </div>
+                                    ) : (
+                                        <McqQuiz
+                                            questions={quiz}
+                                            onRetake={() => {
+                                                setQuiz([]);
+                                                getQuiz();
+                                            }}
+                                            title="Zoom Lecture Comprehension Quiz (MCQ)"
+                                        />
+                                    )}
                                 </div>
                             )}
                         </div>
