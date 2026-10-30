@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 from pathlib import Path
 
 # Add project root to sys.path so 'backend' can be imported
@@ -20,16 +21,20 @@ if nltk_data_dir not in nltk.data.path:
 
 # Import the FastAPI application
 from backend.server import app
+from fastapi.responses import JSONResponse
+from starlette.requests import Request
+from starlette.middleware.base import BaseHTTPMiddleware
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"error": str(exc), "type": type(exc).__name__, "traceback": traceback.format_exc()}
+    )
 
 @app.get("/api/health")
 def api_health_check():
     return {"status": "ok", "service": "CogniText Vercel Serverless"}
-
-# In Vercel, requests to /api/xyz might arrive at the ASGI app as /api/xyz or as /xyz.
-# Since backend.server defines routes starting with /api/ (e.g. /api/ytb-t01),
-# we ensure that requests without the /api prefix are routed correctly.
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
 
 class VercelRouteMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
